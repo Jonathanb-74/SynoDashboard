@@ -1,59 +1,177 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SynoManager
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Console web centralisée pour superviser et inventorier des NAS Synology.  
+Permet à des agents Docker (déployés sur chaque NAS) d'envoyer leurs données vers un serveur central, de décoder et afficher les informations système, stockage, packages, etc.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Stack technique
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| Composant | Version |
+|-----------|---------|
+| PHP | 8.2+ |
+| Laravel | 11 |
+| Base de données | MySQL / MariaDB |
+| Frontend | Blade + Bootstrap 5 + Alpine.js |
+| Build | Vite |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## Prérequis
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+- PHP 8.2+ avec extensions : `pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`, `bcmath`
+- Composer 2
+- Node.js 18+ et npm
+- MySQL 8+ ou MariaDB 10.6+
+- Serveur web (Apache / Nginx) — ou WAMP/Laragon en local
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## Installation
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 1. Cloner le dépôt
 
-### Premium Partners
+```bash
+git clone https://github.com/VOTRE-COMPTE/SynoManager.git
+cd SynoManager
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### 2. Installer les dépendances
 
-## Contributing
+```bash
+composer install --no-dev --optimize-autoloader
+npm install && npm run build
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 3. Configurer l'environnement
 
-## Code of Conduct
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Éditer `.env` avec les valeurs adaptées à votre environnement :
 
-## Security Vulnerabilities
+```env
+APP_NAME=SynoManager
+APP_ENV=production          # local en développement
+APP_DEBUG=false             # true en développement
+APP_URL=https://votre-domaine.fr
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=synomanager
+DB_USERNAME=votre_user
+DB_PASSWORD=votre_mdp
 
-## License
+SYNOLOGY_TIMEOUT=30
+SYNOLOGY_SSL_VERIFY=true    # false si certificat auto-signé sur le NAS
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### 4. Créer la base de données
+
+```sql
+CREATE DATABASE synomanager
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+```
+
+### 5. Lancer les migrations
+
+```bash
+php artisan migrate
+```
+
+### 6. Lien de stockage (si besoin)
+
+```bash
+php artisan storage:link
+```
+
+---
+
+## Première connexion
+
+1. Ouvrir `APP_URL/register`
+2. Créer votre compte — **le premier utilisateur enregistré est automatiquement administrateur**
+3. Optionnel : désactiver l'inscription libre après création du premier compte  
+   Dans `routes/auth.php`, commenter ou supprimer la route `register`
+
+---
+
+## Configuration post-installation
+
+Ces éléments ne sont pas dans le dépôt et doivent être reconfigurés après chaque installation :
+
+| Élément | Où le recréer |
+|---------|---------------|
+| Modèles API + Décodeurs | **Import / Export** → importer le fichier `.json` d'export |
+| Configuration SMTP | **Paramètres → Configuration SMTP** (stocké en base de données) |
+| NAS et snapshots | Se ré-enregistrent automatiquement dès que les agents ou la Test Console envoient des données |
+| Utilisateurs supplémentaires | **Administration → Utilisateurs** |
+
+---
+
+## Fonctionnalités
+
+- **Supervision NAS** — liste, statut, approbation des NAS en attente
+- **Snapshots** — historique des collectes, visualisation JSON brut
+- **Modèles API** — configuration des endpoints Synology DSM à collecter
+- **Décodeurs JSON** — configuration de l'affichage des données (blocs, éléments, colonnes, sous-colonnes) avec transformateurs
+- **Transformateurs disponibles** : `bytes`, `megabytes`, `date`, `timestamp`, `duration`, `uptime`, `boolean`, `badge_map`, `color_if`
+- **Import / Export** — sauvegarde et restauration des modèles API et décodeurs
+- **Test Console** — collecte manuelle depuis un NAS Synology (proxy serveur-à-serveur)
+- **Gestion des utilisateurs** — rôles `admin` / `user`, protection du dernier admin
+- **Configuration SMTP** — stockée en base, remplace `.env` au démarrage
+
+---
+
+## Structure des migrations
+
+Les migrations s'appliquent dans l'ordre suivant :
+
+| # | Table | Description |
+|---|-------|-------------|
+| 1 | `api_models` | Modèles de collecte API |
+| 2 | `api_model_entries` | Entrées API par modèle |
+| 3 | `json_decoder_models` | Modèles de décodage |
+| 4 | `display_blocks` | Blocs d'affichage |
+| 5 | `display_elements` | Éléments (valeur / boucle) |
+| 6 | `display_columns` | Colonnes de boucle |
+| 7 | `display_sub_columns` | Sous-colonnes |
+| 8 | `nas_devices` | NAS enregistrés |
+| 9 | `nas_api_available` | APIs disponibles par NAS |
+| 10 | `nas_snapshots` | Snapshots de collecte |
+| … | Migrations additionnelles | Évolutions de schéma |
+
+---
+
+## Développement local (WAMP)
+
+```env
+APP_URL=http://localhost/SynoManager/public
+APP_DEBUG=true
+APP_ENV=local
+DB_PASSWORD=          # vide par défaut sous WAMP
+SYNOLOGY_SSL_VERIFY=false
+```
+
+```bash
+npm run dev           # Vite en mode watch
+```
+
+---
+
+## Sécurité
+
+- Les credentials DSM Synology ne sont **jamais stockés** (utilisés uniquement en mémoire PHP le temps de la collecte)
+- La configuration SMTP (mot de passe inclus) est stockée en base de données, **pas dans le dépôt**
+- Toutes les routes sont protégées par `auth` ; les routes d'administration par le middleware `admin`
+- L'API d'ingestion agent (`POST /api/v1/agent/ingest`) dispose d'un middleware de signature HMAC (à compléter)
+
+---
+
+## Licence
+
+Usage privé.
