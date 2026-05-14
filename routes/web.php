@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\ApiDebugController;
+use App\Http\Controllers\ApiLogController;
+use App\Http\Controllers\DocsController;
 use App\Http\Controllers\ImportExportController;
 use App\Http\Controllers\SmtpSettingController;
 use App\Http\Controllers\UserController;
@@ -29,8 +31,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/nas/{nas}/reject',     [NasApprovalController::class, 'reject'])->name('nas.reject');
 
     // NAS CRUD
-    Route::resource('nas', NasController::class)->only(['index', 'show', 'destroy'])->parameters(['nas' => 'nas']);
-    Route::post('/nas/{nas}/redecode', [NasController::class, 'redecode'])->name('nas.redecode');
+    Route::resource('nas', NasController::class)->only(['index', 'show', 'update', 'destroy'])->parameters(['nas' => 'nas']);
+    Route::post('/nas/{nas}/redecode',        [NasController::class, 'redecode'])->name('nas.redecode');
+    Route::post('/nas/{nas}/regenerate-hmac', [NasController::class, 'regenerateHmac'])->name('nas.regenerate-hmac');
 
     // Snapshots
     Route::get('/snapshots/{snapshot}',      [SnapshotController::class, 'show'])->name('snapshots.show');
@@ -42,10 +45,14 @@ Route::middleware('auth')->group(function () {
 
     // API models
     Route::resource('api-models', ApiModelController::class);
-    Route::post('api-models/{apiModel}/create-decoder', [ApiModelController::class, 'createDecoder'])->name('api-models.create-decoder');
+    Route::post('api-models/{apiModel}/create-decoder',  [ApiModelController::class, 'createDecoder'])->name('api-models.create-decoder');
+    Route::post('api-models/{apiModel}/duplicate',       [ApiModelController::class, 'duplicate'])->name('api-models.duplicate');
+    Route::post('api-models/{apiModel}/propagate-entry', [ApiModelController::class, 'propagateEntry'])->name('api-models.propagate-entry');
 
     // Decoder models
     Route::resource('decoder-models', DecoderModelController::class)->except('show');
+    Route::post('decoder-models/{decoderModel}/duplicate', [DecoderModelController::class, 'duplicate'])->name('decoder-models.duplicate');
+    Route::post('decoder-models/{decoderModel}/copy-to',   [DecoderModelController::class, 'copyTo'])->name('decoder-models.copy-to');
 
     // Blocks (declare reorder before {block} to avoid conflict)
     Route::post('decoder-models/{decoderModel}/blocks/reorder',
@@ -87,12 +94,20 @@ Route::middleware('auth')->group(function () {
     Route::delete('decoder-models/{decoderModel}/blocks/{block}/elements/{element}/columns/{column}/sub-columns/{subColumn}',
         [DecoderModelController::class, 'destroySubColumn'])->name('decoder-models.destroySubColumn');
 
+    // Docs
+    Route::get('/docs/agent-api', [DocsController::class, 'agentApi'])->name('docs.agent-api');
+
     // Import / Export
     Route::get('/import-export',                    [ImportExportController::class, 'index'])->name('import-export.index');
     Route::post('/import-export/export',            [ImportExportController::class, 'export'])->name('import-export.export');
     Route::post('/import-export/import',            [ImportExportController::class, 'import'])->name('import-export.import');
     Route::post('/import-export/import/confirm',    [ImportExportController::class, 'importConfirm'])->name('import-export.import.confirm');
     Route::post('/import-export/import/cancel',     [ImportExportController::class, 'importCancel'])->name('import-export.import.cancel');
+
+    // API logs
+    Route::get('/api-logs',              [ApiLogController::class, 'index'])->name('api-logs.index');
+    Route::get('/api-logs/{apiLog}',     [ApiLogController::class, 'show'])->name('api-logs.show');
+    Route::delete('/api-logs',           [ApiLogController::class, 'destroy'])->name('api-logs.destroy');
 
     // API method debug
     Route::get('/debug/api-method',          [ApiDebugController::class, 'index'])->name('debug.api-method.index');

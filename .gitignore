@@ -14,7 +14,7 @@
 /.zed
 /auth.json
 /node_modules
-/public/build
+# /public/build  — commité pour compatibilité hébergement mutualisé (sans Node.js)
 /public/hot
 /public/storage
 /storage/*.key

@@ -36,12 +36,13 @@ git clone https://github.com/VOTRE-COMPTE/SynoManager.git
 cd SynoManager
 ```
 
-### 2. Installer les dépendances
+### 2. Installer les dépendances PHP
 
 ```bash
 composer install --no-dev --optimize-autoloader
-npm install && npm run build
 ```
+
+> Les assets front-end (`public/build/`) sont **inclus dans le dépôt** — aucune installation Node.js requise sur le serveur.
 
 ### 3. Configurer l'environnement
 
@@ -158,7 +159,9 @@ SYNOLOGY_SSL_VERIFY=false
 ```
 
 ```bash
-npm run dev           # Vite en mode watch
+# Uniquement si vous modifiez le CSS/JS :
+npm install && npm run dev    # Vite en mode watch
+npm run build                 # Puis rebuilder avant de commiter
 ```
 
 ---
@@ -169,6 +172,13 @@ npm run dev           # Vite en mode watch
 - La configuration SMTP (mot de passe inclus) est stockée en base de données, **pas dans le dépôt**
 - Toutes les routes sont protégées par `auth` ; les routes d'administration par le middleware `admin`
 - L'API d'ingestion agent (`POST /api/v1/agent/ingest`) dispose d'un middleware de signature HMAC (à compléter)
+
+---
+
+## Documentation agent
+
+La spec complète du contrat API entre le serveur et l'agent Docker est dans [`docs/agent-api.md`](docs/agent-api.md).  
+Ce fichier est la référence pour développer le repo [`SynoManager-Agent`](https://github.com/VOTRE-COMPTE/SynoManager-Agent).
 
 ---
 

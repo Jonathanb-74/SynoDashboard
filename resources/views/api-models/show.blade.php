@@ -1,16 +1,7 @@
 <x-app-layout>
     <x-slot name="title">{{ $apiModel->name }}</x-slot>
 
-    <div class="d-flex gap-2 mb-3">
-        <a href="{{ route('api-models.index') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Retour
-        </a>
-        <a href="{{ route('api-models.edit', $apiModel) }}" class="btn btn-sm btn-primary">
-            <i class="bi bi-pencil me-1"></i>Modifier
-        </a>
-    </div>
-
-    <div class="card border-0 shadow-sm" x-data="{
+    <div x-data="{
         entries: {{ json_encode($apiModel->entries->map(fn($e) => [
             'api_name'    => $e->api_name,
             'path'        => $e->path,
@@ -20,6 +11,14 @@
             'enabled'     => $e->enabled,
             'parameters'  => $e->parameters ? json_encode($e->parameters) : '',
         ])->values()) }},
+        otherModelsByApi: {{ Illuminate\Support\Js::from($otherModelsByApi) }},
+        propagateApiName: '',
+        propagateTargets: [],
+        openPropagateModal(apiName) {
+            this.propagateApiName = apiName;
+            this.propagateTargets = this.otherModelsByApi[apiName] ?? [];
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('propagateModal')).show();
+        },
         search: '',
         sortField: 'api_name',
         sortDir: 'asc',
@@ -59,6 +58,25 @@
             return result;
         }
     }">
+        <div class="d-flex gap-2 mb-3 align-items-center flex-wrap">
+            <a href="{{ route('api-models.index') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Retour
+            </a>
+            <a href="{{ route('api-models.edit', $apiModel) . '?filter=active' }}" class="btn btn-sm btn-primary">
+                <i class="bi bi-pencil me-1"></i>Modifier actifs
+            </a>
+            <a href="{{ route('api-models.edit', $apiModel) }}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-pencil-square me-1"></i>Modifier tout
+            </a>
+            <form method="POST" action="{{ route('api-models.duplicate', $apiModel) }}">
+                @csrf
+                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-copy me-1"></i>Dupliquer
+                </button>
+            </form>
+        </div>
+
+        <div class="card border-0 shadow-sm">
         <div class="card-header bg-white d-flex align-items-start justify-content-between">
             <div>
                 <h6 class="mb-0 fw-semibold">{{ $apiModel->name }}</h6>
@@ -140,6 +158,7 @@
                                 <th style="cursor:pointer" @click="sortBy('enabled')">
                                     Actif <i class="bi" :class="sortIcon('enabled', false)"></i>
                                 </th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -162,6 +181,13 @@
                                             <i class="bi bi-x-circle text-danger"></i>
                                         </template>
                                     </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1"
+                                                title="Propager les paramètres vers d'autres modèles"
+                                                @click="openPropagateModal(entry.api_name)">
+                                            <i class="bi bi-broadcast"></i>
+                                        </button>
+                                    </td>
                                 </tr>
                             </template>
                         </tbody>
@@ -169,5 +195,53 @@
                 </div>
             @endif
         </div>
-    </div>
+        </div>{{-- /.card --}}
+
+    {{-- Modal propagation --}}
+    <div class="modal fade" id="propagateModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header py-2">
+                    <h6 class="modal-title fw-semibold">
+                        <i class="bi bi-broadcast me-2 text-primary"></i>Propager les paramètres
+                    </h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{{ route('api-models.propagate-entry', $apiModel) }}">
+                    @csrf
+                    <input type="hidden" name="api_name" :value="propagateApiName">
+                    <div class="modal-body">
+                        <p class="small mb-1">
+                            Copier les paramètres de <strong x-text="propagateApiName"></strong> vers :
+                        </p>
+                        <template x-if="propagateTargets.length === 0">
+                            <p class="text-muted small fst-italic">
+                                Aucun autre modèle ne contient cette API.
+                            </p>
+                        </template>
+                        <template x-if="propagateTargets.length > 0">
+                            <div>
+                                <template x-for="model in propagateTargets" :key="model.id">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input"
+                                               name="target_model_ids[]"
+                                               :value="model.id"
+                                               :id="'pm-' + model.id">
+                                        <label class="form-check-label small" :for="'pm-' + model.id" x-text="model.name"></label>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                    <div class="modal-footer py-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-sm btn-primary" :disabled="propagateTargets.length === 0">
+                            <i class="bi bi-broadcast me-1"></i>Propager
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>{{-- /.modal --}}
+    </div>{{-- /x-data wrapper --}}
 </x-app-layout>

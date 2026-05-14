@@ -50,6 +50,9 @@
               @submit.prevent="$refs.entriesJson.value = JSON.stringify(entries); $el.submit()">
             @csrf @method('PUT')
             <input type="hidden" name="entries_json" x-ref="entriesJson">
+            @if($filterActive)
+                <input type="hidden" name="filter_active" value="1">
+            @endif
 
             <div class="card-header bg-white d-flex align-items-center justify-content-between">
                 <h6 class="mb-0 fw-semibold">Modifier le modèle API</h6>
@@ -92,11 +95,22 @@
                 </div>
 
                 <div class="d-flex align-items-center justify-content-between mb-2">
-                    <h6 class="fw-semibold mb-0">
-                        Entrées API
-                        <span class="text-muted fw-normal small ms-1"
-                              x-text="search ? entries.filter(e => isVisible(e)).length + ' / ' + entries.length + ' entrées' : entries.length + ' entrées'"></span>
-                    </h6>
+                    <div class="d-flex align-items-center gap-2">
+                        <h6 class="fw-semibold mb-0">
+                            Entrées API
+                            <span class="text-muted fw-normal small ms-1"
+                                  x-text="search ? entries.filter(e => isVisible(e)).length + ' / ' + entries.length + ' entrées' : entries.length + ' entrées'"></span>
+                        </h6>
+                        @if($filterActive)
+                            <span class="badge bg-warning text-dark">
+                                <i class="bi bi-funnel-fill me-1"></i>Actives uniquement
+                                @if($totalCount) — {{ $apiModel->entries->count() }} / {{ $totalCount }} @endif
+                            </span>
+                            <a href="{{ route('api-models.edit', $apiModel) }}" class="btn btn-sm btn-outline-secondary py-0 px-2 small">
+                                <i class="bi bi-list me-1"></i>Modifier tout
+                            </a>
+                        @endif
+                    </div>
                     <div class="d-flex gap-2 align-items-center">
                         <div class="input-group input-group-sm" style="width:240px">
                             <span class="input-group-text"><i class="bi bi-search"></i></span>

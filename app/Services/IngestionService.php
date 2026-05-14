@@ -46,8 +46,37 @@ class IngestionService
                 'decoded_cache' => null,
             ]);
 
-            return ['nas' => $nas, 'snapshot' => $snapshot, 'is_new' => $isNew];
+            $config = $this->buildCollectionConfig($nas);
+
+            return ['nas' => $nas, 'snapshot' => $snapshot, 'is_new' => $isNew, 'collection_config' => $config];
         });
+    }
+
+    private function buildCollectionConfig(NasDevice $nas): ?array
+    {
+        if ($nas->status !== 'approved' || $nas->api_model_id === null) {
+            return null;
+        }
+
+        $nas->loadMissing(['apiModel.entries', 'availableApis']);
+
+        $availableByName = $nas->availableApis->keyBy('api_name');
+
+        $apis = $nas->apiModel->entries
+            ->where('enabled', true)
+            ->filter(fn($entry) => $availableByName->has($entry->api_name))
+            ->map(fn($entry) => [
+                'api'     => $entry->api_name,
+                'method'  => $entry->method,
+                'version' => min($entry->max_version, $availableByName->get($entry->api_name)->max_version),
+            ])
+            ->values()
+            ->toArray();
+
+        return [
+            'interval_seconds' => $nas->collection_frequency * 60,
+            'apis'             => $apis,
+        ];
     }
 
     private function syncApiModel(NasDevice $nas, string $dsmVersion, array $apiList): void
@@ -114,16 +143,16 @@ class IngestionService
             }
         }
 
-        // Attach ApiModel to NAS if not already set
-        $changed = false;
+        $changed         = false;
+        $apiModelChanged = $nas->api_model_id !== $matched->id;
 
-        if ($nas->api_model_id === null) {
+        if ($apiModelChanged) {
             $nas->api_model_id = $matched->id;
             $changed = true;
         }
 
-        // Propagate the decoder linked to this ApiModel if NAS has none yet
-        if ($nas->decoder_model_id === null && $matched->decoder_model_id !== null) {
+        // When the API model changes automatically, always follow its linked decoder
+        if ($apiModelChanged && $matched->decoder_model_id !== null) {
             $nas->decoder_model_id = $matched->decoder_model_id;
             $changed = true;
         }

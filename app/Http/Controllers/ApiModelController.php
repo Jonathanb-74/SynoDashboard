@@ -47,16 +47,103 @@ class ApiModelController extends Controller
     {
         $apiModel->load(['entries', 'decoderModel']);
 
-        return view('api-models.show', compact('apiModel'));
+        $apiNames = $apiModel->entries->pluck('api_name');
+
+        $otherModelsByApi = \App\Models\ApiModelEntry::whereIn('api_name', $apiNames)
+            ->where('api_model_id', '!=', $apiModel->id)
+            ->with('apiModel:id,name')
+            ->get()
+            ->filter(fn($e) => $e->apiModel !== null)
+            ->groupBy('api_name')
+            ->map(fn($entries) => $entries
+                ->map(fn($e) => ['id' => $e->apiModel->id, 'name' => $e->apiModel->name])
+                ->unique('id')
+                ->values()
+            );
+
+        return view('api-models.show', compact('apiModel', 'otherModelsByApi'));
     }
 
-    public function edit(ApiModel $apiModel)
+    public function duplicate(ApiModel $apiModel)
     {
-        $apiModel->load(['entries', 'decoderModel']);
+        $apiModel->load('entries');
+
+        $copy = ApiModel::create([
+            'name'             => $apiModel->name . ' (copie)',
+            'description'      => $apiModel->description,
+            'decoder_model_id' => $apiModel->decoder_model_id,
+        ]);
+
+        $rows = $apiModel->entries->map(fn($e) => [
+            'api_model_id' => $copy->id,
+            'api_name'     => $e->api_name,
+            'path'         => $e->path,
+            'method'       => $e->method,
+            'version'      => $e->version,
+            'parameters'   => $e->parameters ? json_encode($e->parameters) : null,
+            'enabled'      => $e->enabled,
+            'min_version'  => $e->min_version,
+            'max_version'  => $e->max_version,
+            'created_at'   => now(),
+            'updated_at'   => now(),
+        ])->toArray();
+
+        foreach (array_chunk($rows, 500) as $chunk) {
+            ApiModelEntry::insert($chunk);
+        }
+
+        return redirect()->route('api-models.show', $copy)
+            ->with('success', "Modèle API dupliqué : « {$copy->name} ».");
+    }
+
+    public function propagateEntry(Request $request, ApiModel $apiModel)
+    {
+        $request->validate([
+            'api_name'            => 'required|string',
+            'target_model_ids'    => 'nullable|array',
+            'target_model_ids.*'  => 'exists:api_models,id',
+        ]);
+
+        if (empty($request->target_model_ids)) {
+            return back()->with('error', 'Aucun modèle cible sélectionné.');
+        }
+
+        $source = $apiModel->entries()->where('api_name', $request->api_name)->first();
+
+        if (!$source) {
+            return back()->with('error', 'Entrée source introuvable.');
+        }
+
+        $count = ApiModelEntry::whereIn('api_model_id', $request->target_model_ids)
+            ->where('api_name', $request->api_name)
+            ->update([
+                'path'        => $source->path,
+                'method'      => $source->method,
+                'min_version' => $source->min_version,
+                'max_version' => $source->max_version,
+                'parameters'  => $source->parameters ? json_encode($source->parameters) : null,
+                'enabled'     => $source->enabled,
+                'updated_at'  => now(),
+            ]);
+
+        return back()->with('success', "Paramètres de « {$request->api_name} » propagés vers {$count} entrée(s).");
+    }
+
+    public function edit(Request $request, ApiModel $apiModel)
+    {
+        $filterActive = $request->query('filter') === 'active';
+
+        $apiModel->load(['decoderModel']);
+        $totalCount = $filterActive ? $apiModel->entries()->count() : null;
+        $query = $apiModel->entries();
+        if ($filterActive) {
+            $query->where('enabled', true);
+        }
+        $apiModel->setRelation('entries', $query->get());
         $decoderModels = JsonDecoderModel::orderBy('name')->get();
         $methods       = ApiMethodOption::orderBy('sort_order')->orderBy('name')->pluck('name');
 
-        return view('api-models.edit', compact('apiModel', 'decoderModels', 'methods'));
+        return view('api-models.edit', compact('apiModel', 'decoderModels', 'methods', 'filterActive', 'totalCount'));
     }
 
     public function update(Request $request, ApiModel $apiModel)
@@ -66,11 +153,17 @@ class ApiModelController extends Controller
             'description'      => 'nullable|string',
             'decoder_model_id' => 'nullable|exists:json_decoder_models,id',
             'entries_json'     => 'nullable|string',
+            'filter_active'    => 'nullable|boolean',
         ]);
 
         $apiModel->update($request->only('name', 'description', 'decoder_model_id'));
 
-        $apiModel->entries()->delete();
+        if ($request->boolean('filter_active')) {
+            // Active-only mode: only replace enabled entries, keep disabled ones intact
+            $apiModel->entries()->where('enabled', true)->delete();
+        } else {
+            $apiModel->entries()->delete();
+        }
         $entries = json_decode($request->input('entries_json', '[]'), true) ?? [];
         $this->syncEntries($apiModel, $entries);
 

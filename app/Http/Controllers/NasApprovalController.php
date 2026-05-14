@@ -29,6 +29,8 @@ class NasApprovalController extends Controller
             'decoder_model_id'     => 'nullable|exists:json_decoder_models,id',
         ]);
 
+        $hmacSecret = bin2hex(random_bytes(32));
+
         $nas->update([
             'status'               => 'approved',
             'approved_at'          => now(),
@@ -36,10 +38,12 @@ class NasApprovalController extends Controller
             'collection_frequency' => $request->input('collection_frequency', 60),
             'api_model_id'         => $request->input('api_model_id'),
             'decoder_model_id'     => $request->input('decoder_model_id'),
+            'hmac_secret'          => $hmacSecret,
         ]);
 
-        return redirect()->route('nas.pending')
-            ->with('success', "Le NAS « {$nas->name} » a été approuvé.");
+        return redirect()->route('nas.show', $nas)
+            ->with('hmac_generated', true)
+            ->with('success', "Le NAS « {$nas->name} » a été approuvé. La clé HMAC a été générée.");
     }
 
     public function reject(NasDevice $nas)

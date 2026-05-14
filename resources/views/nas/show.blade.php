@@ -37,31 +37,76 @@
                             <tr><td class="text-muted">Modèle</td><td>{{ $nas->model ?? '—' }}</td></tr>
                             <tr><td class="text-muted">N° Série</td><td class="font-monospace small">{{ $nas->serial }}</td></tr>
                             <tr><td class="text-muted">Version DSM</td><td>{{ $nas->dsm_version ?? '—' }}</td></tr>
-                            <tr>
+                            <tr x-data="{ editing: false }">
                                 <td class="text-muted">Modèle API</td>
                                 <td>
-                                    @if($nas->apiModel)
-                                        <a href="{{ route('api-models.show', $nas->apiModel) }}" class="text-decoration-none small">
-                                            {{ $nas->apiModel->name }}
-                                        </a>
-                                    @else
-                                        <span class="text-muted">—</span>
-                                    @endif
+                                    <div x-show="!editing" class="d-flex align-items-center gap-1">
+                                        @if($nas->apiModel)
+                                            <a href="{{ route('api-models.show', $nas->apiModel) }}" class="text-decoration-none">{{ $nas->apiModel->name }}</a>
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
+                                        <button type="button" @click="editing = true" class="btn btn-link p-0 ms-1 text-muted" title="Modifier"><i class="bi bi-pencil" style="font-size:.7rem"></i></button>
+                                    </div>
+                                    <form x-show="editing" style="display:none" method="POST" action="{{ route('nas.update', $nas) }}">
+                                        @csrf @method('PATCH')
+                                        <div class="d-flex align-items-center gap-1">
+                                            <select name="api_model_id" class="form-select form-select-sm py-0" style="font-size:.8rem">
+                                                <option value="">— aucun —</option>
+                                                @foreach($allApiModels as $m)
+                                                    <option value="{{ $m->id }}" @selected($nas->api_model_id == $m->id)>{{ $m->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <button type="submit" class="btn btn-success btn-sm p-1 lh-1"><i class="bi bi-check"></i></button>
+                                            <button type="button" @click="editing = false" class="btn btn-outline-secondary btn-sm p-1 lh-1"><i class="bi bi-x"></i></button>
+                                        </div>
+                                    </form>
                                 </td>
                             </tr>
-                            <tr>
+                            <tr x-data="{ editing: false }">
                                 <td class="text-muted">Décodeur</td>
                                 <td>
-                                    @if($nas->decoderModel)
-                                        <a href="{{ route('decoder-models.edit', $nas->decoderModel) }}" class="text-decoration-none small">
-                                            {{ $nas->decoderModel->name }}
-                                        </a>
-                                    @else
-                                        <span class="text-muted">—</span>
-                                    @endif
+                                    <div x-show="!editing" class="d-flex align-items-center gap-1">
+                                        @if($nas->decoderModel)
+                                            <a href="{{ route('decoder-models.edit', $nas->decoderModel) }}" class="text-decoration-none">{{ $nas->decoderModel->name }}</a>
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
+                                        <button type="button" @click="editing = true" class="btn btn-link p-0 ms-1 text-muted" title="Modifier"><i class="bi bi-pencil" style="font-size:.7rem"></i></button>
+                                    </div>
+                                    <form x-show="editing" style="display:none" method="POST" action="{{ route('nas.update', $nas) }}">
+                                        @csrf @method('PATCH')
+                                        <div class="d-flex align-items-center gap-1">
+                                            <select name="decoder_model_id" class="form-select form-select-sm py-0" style="font-size:.8rem">
+                                                <option value="">— aucun —</option>
+                                                @foreach($allDecoderModels as $m)
+                                                    <option value="{{ $m->id }}" @selected($nas->decoder_model_id == $m->id)>{{ $m->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <button type="submit" class="btn btn-success btn-sm p-1 lh-1"><i class="bi bi-check"></i></button>
+                                            <button type="button" @click="editing = false" class="btn btn-outline-secondary btn-sm p-1 lh-1"><i class="bi bi-x"></i></button>
+                                        </div>
+                                    </form>
                                 </td>
                             </tr>
-                            <tr><td class="text-muted">Fréquence</td><td>{{ $nas->collection_frequency }} min</td></tr>
+                            <tr x-data="{ editing: false }">
+                                <td class="text-muted">Fréquence</td>
+                                <td>
+                                    <div x-show="!editing" class="d-flex align-items-center gap-1">
+                                        <span>{{ $nas->collection_frequency }} min</span>
+                                        <button type="button" @click="editing = true" class="btn btn-link p-0 ms-1 text-muted" title="Modifier"><i class="bi bi-pencil" style="font-size:.7rem"></i></button>
+                                    </div>
+                                    <form x-show="editing" style="display:none" method="POST" action="{{ route('nas.update', $nas) }}">
+                                        @csrf @method('PATCH')
+                                        <div class="d-flex align-items-center gap-1">
+                                            <input type="number" name="collection_frequency" class="form-control form-control-sm py-0" style="font-size:.8rem;width:80px"
+                                                   value="{{ $nas->collection_frequency }}" min="1" max="10080">
+                                            <button type="submit" class="btn btn-success btn-sm p-1 lh-1"><i class="bi bi-check"></i></button>
+                                            <button type="button" @click="editing = false" class="btn btn-outline-secondary btn-sm p-1 lh-1"><i class="bi bi-x"></i></button>
+                                        </div>
+                                    </form>
+                                </td>
+                            </tr>
                             <tr>
                                 <td class="text-muted">Dernier contact</td>
                                 <td title="{{ $nas->last_contact_at?->format('d/m/Y H:i:s') }}">
@@ -97,6 +142,49 @@
                     </div>
                 </div>
             @endif
+
+            {{-- Clé HMAC --}}
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-white d-flex align-items-center gap-2 py-2">
+                    <i class="bi bi-key text-primary"></i>
+                    <h6 class="mb-0 fw-semibold small flex-grow-1">Authentification HMAC</h6>
+                    @if($nas->hmac_secret)
+                        <span class="badge bg-success">Active</span>
+                    @else
+                        <span class="badge bg-secondary">Non configurée</span>
+                    @endif
+                </div>
+                <div class="card-body py-2 px-3">
+                    @if(session('hmac_generated'))
+                        <div class="alert alert-success py-1 px-2 small mb-2">
+                            <i class="bi bi-check-circle me-1"></i>Clé générée — copiez-la maintenant.
+                        </div>
+                    @endif
+
+                    @if($nas->hmac_secret)
+                        <p class="small text-muted mb-1">Variable <code>SYNOMANAGER_SECRET</code> à configurer sur l'agent :</p>
+                        <div class="input-group input-group-sm mb-2">
+                            <input type="text" id="hmac-key-input" class="form-control font-monospace"
+                                   value="{{ $nas->hmac_secret }}" readonly>
+                            <button class="btn btn-outline-secondary" type="button"
+                                    onclick="navigator.clipboard.writeText(document.getElementById('hmac-key-input').value).then(()=>{ this.innerHTML='<i class=\'bi bi-check\'></i>'; setTimeout(()=>this.innerHTML='<i class=\'bi bi-clipboard\'></i>',1500) })">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                    @else
+                        <p class="small text-muted mb-2">Aucune clé configurée. La clé est générée automatiquement à l'approbation du NAS.</p>
+                    @endif
+
+                    <form method="POST" action="{{ route('nas.regenerate-hmac', $nas) }}"
+                          onsubmit="return confirm('Régénérer la clé HMAC ? L\'ancienne clé sera immédiatement invalidée et l\'agent ne pourra plus envoyer de données tant qu\'il n\'aura pas été mis à jour.')">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-warning btn-sm w-100">
+                            <i class="bi bi-arrow-repeat me-1"></i>
+                            {{ $nas->hmac_secret ? 'Régénérer la clé' : 'Générer une clé' }}
+                        </button>
+                    </form>
+                </div>
+            </div>
 
             {{-- APIs disponibles (repliable) --}}
             <div class="card border-0 shadow-sm mb-3" x-data="{ open: false }">

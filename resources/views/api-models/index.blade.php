@@ -50,9 +50,15 @@
                                     <a href="{{ route('api-models.show', $model) }}" class="btn btn-sm btn-outline-secondary me-1">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <a href="{{ route('api-models.edit', $model) }}" class="btn btn-sm btn-outline-primary me-1">
+                                    <a href="{{ route('api-models.edit', $model) . '?filter=active' }}" class="btn btn-sm btn-outline-primary me-1" title="Modifier les entrées actives">
                                         <i class="bi bi-pencil"></i>
                                     </a>
+                                    <form method="POST" action="{{ route('api-models.duplicate', $model) }}" class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary me-1" title="Dupliquer">
+                                            <i class="bi bi-copy"></i>
+                                        </button>
+                                    </form>
                                     <form method="POST" action="{{ route('api-models.destroy', $model) }}" class="d-inline"
                                           onsubmit="return confirm('Supprimer ce modèle API ?')">
                                         @csrf @method('DELETE')

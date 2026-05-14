@@ -74,6 +74,52 @@ class DecoderModelController extends Controller
             ->with('success', "Le décodeur « {$name} » a été supprimé.");
     }
 
+    public function duplicate(JsonDecoderModel $decoderModel)
+    {
+        $decoderModel->load(['blocks.elements.columns.subColumns']);
+
+        $copy = JsonDecoderModel::create([
+            'name'        => $decoderModel->name . ' (copie)',
+            'description' => $decoderModel->description,
+        ]);
+
+        $this->deepCopyBlocks($decoderModel->blocks, $copy->id);
+
+        return redirect()->route('decoder-models.edit', $copy)
+            ->with('success', "Décodeur dupliqué : « {$copy->name} ».");
+    }
+
+    public function copyTo(Request $request, JsonDecoderModel $decoderModel)
+    {
+        $sourceId = $decoderModel->id;
+        $request->validate([
+            'target_id' => ['required', 'exists:json_decoder_models,id', function ($attr, $val, $fail) use ($sourceId) {
+                if ((int) $val === $sourceId) {
+                    $fail('Le décodeur cible doit être différent du décodeur source.');
+                }
+            }],
+            'mode' => 'required|in:replace,append',
+        ]);
+
+        $target = JsonDecoderModel::findOrFail($request->target_id);
+        $decoderModel->load(['blocks.elements.columns.subColumns']);
+
+        if ($request->mode === 'replace') {
+            $target->blocks()->delete();
+            $sortOffset = 0;
+        } else {
+            $sortOffset = ((int) $target->blocks()->max('sort_order')) + 1;
+        }
+
+        $this->deepCopyBlocks($decoderModel->blocks, $target->id, $sortOffset);
+        $this->invalidateDecoderCache($target);
+
+        $action = $request->mode === 'replace' ? 'remplacé le contenu de' : 'ajouté à';
+
+        return redirect()->route('decoder-models.index')
+            ->with('success', "Contenu de « {$decoderModel->name} » {$action} « {$target->name} ».");
+    }
+
     // =========================================================================
     // Blocks
     // =========================================================================
@@ -371,5 +417,57 @@ class DecoderModelController extends Controller
         }
         $decoded = json_decode($json, true);
         return is_array($decoded) ? $decoded : null;
+    }
+
+    private function deepCopyBlocks($blocks, int $decoderModelId, int $sortOffset = 0): void
+    {
+        foreach ($blocks as $block) {
+            $newBlock = DisplayBlock::create([
+                'decoder_model_id' => $decoderModelId,
+                'title'            => $block->title,
+                'description'      => $block->description,
+                'icon'             => $block->icon,
+                'sort_order'       => $block->sort_order + $sortOffset,
+            ]);
+
+            foreach ($block->elements as $element) {
+                $newElement = DisplayElement::create([
+                    'block_id'           => $newBlock->id,
+                    'type'               => $element->type,
+                    'label'              => $element->label,
+                    'api_name'           => $element->api_name,
+                    'json_path'          => $element->json_path,
+                    'internal_key'       => (string) Str::uuid(),
+                    'transformer'        => $element->transformer,
+                    'transformer_config' => $element->transformer_config,
+                    'sort_order'         => $element->sort_order,
+                ]);
+
+                foreach ($element->columns as $column) {
+                    $newColumn = DisplayColumn::create([
+                        'element_id'         => $newElement->id,
+                        'type'               => $column->type,
+                        'label'              => $column->label,
+                        'json_path'          => $column->json_path,
+                        'internal_key'       => (string) Str::uuid(),
+                        'transformer'        => $column->transformer,
+                        'transformer_config' => $column->transformer_config,
+                        'sort_order'         => $column->sort_order,
+                    ]);
+
+                    foreach ($column->subColumns as $subColumn) {
+                        DisplaySubColumn::create([
+                            'column_id'          => $newColumn->id,
+                            'label'              => $subColumn->label,
+                            'json_path'          => $subColumn->json_path,
+                            'internal_key'       => (string) Str::uuid(),
+                            'transformer'        => $subColumn->transformer,
+                            'transformer_config' => $subColumn->transformer_config,
+                            'sort_order'         => $subColumn->sort_order,
+                        ]);
+                    }
+                }
+            }
+        }
     }
 }

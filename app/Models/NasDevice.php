@@ -12,7 +12,7 @@ class NasDevice extends Model
     protected $fillable = [
         'name', 'model', 'serial', 'url', 'dsm_version', 'status',
         'api_model_id', 'decoder_model_id', 'collection_frequency',
-        'last_contact_at', 'approved_at', 'approved_by_user_id',
+        'last_contact_at', 'approved_at', 'approved_by_user_id', 'hmac_secret',
     ];
 
     protected $casts = [

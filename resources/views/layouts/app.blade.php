@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
+        [x-cloak] { display: none !important; }
         body { background-color: #f0f2f5; }
         .sidebar {
             min-height: 100vh;
@@ -106,6 +107,14 @@
         <a href="{{ route('import-export.index') }}"
            class="nav-link {{ request()->routeIs('import-export.*') ? 'active' : '' }}">
             <i class="bi bi-arrow-left-right me-2"></i>Import / Export
+        </a>
+        <a href="{{ route('docs.agent-api') }}"
+           class="nav-link {{ request()->routeIs('docs.*') ? 'active' : '' }}">
+            <i class="bi bi-file-earmark-text me-2"></i>Doc API Agent
+        </a>
+        <a href="{{ route('api-logs.index') }}"
+           class="nav-link {{ request()->routeIs('api-logs.*') ? 'active' : '' }}">
+            <i class="bi bi-journal-code me-2"></i>Logs API Agent
         </a>
 
         @auth
