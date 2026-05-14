@@ -22,7 +22,7 @@ class NasController extends Controller
         return view('nas.index', compact('nasList'));
     }
 
-    public function show(NasDevice $nas)
+    public function show(Request $request, NasDevice $nas)
     {
         $nas->load(['apiModel', 'decoderModel.blocks.elements.columns.subColumns', 'approvedBy', 'availableApis']);
         $nas->loadCount('snapshots');
@@ -33,15 +33,23 @@ class NasController extends Controller
         $decodedSnapshot = null;
 
         if ($nas->decoderModel) {
-            // Prefer the most recent snapshot that contains response data (collection payload)
-            $decodedSnapshot = $nas->snapshots()
-                ->where('raw_json', 'like', '%"responses":{%')
-                ->latest('collected_at')
-                ->first();
+            $requestedId = $request->query('snapshot');
 
-            // Fallback to the latest snapshot of any type
+            if ($requestedId) {
+                $decodedSnapshot = $nas->snapshots()->find((int) $requestedId);
+            }
+
             if (!$decodedSnapshot) {
-                $decodedSnapshot = $nas->latestSnapshot;
+                // Prefer the most recent snapshot that contains response data (collection payload)
+                $decodedSnapshot = $nas->snapshots()
+                    ->where('raw_json', 'like', '%"responses":{%')
+                    ->latest('collected_at')
+                    ->first();
+
+                // Fallback to the latest snapshot of any type
+                if (!$decodedSnapshot) {
+                    $decodedSnapshot = $nas->latestSnapshot;
+                }
             }
 
             if ($decodedSnapshot) {

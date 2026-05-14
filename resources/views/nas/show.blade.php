@@ -251,6 +251,13 @@
                                                 {{ number_format(strlen($snap->raw_json) / 1024, 1) }}
                                             </td>
                                             <td class="text-end text-nowrap">
+                                                @if($nas->decoderModel && $snap->hasResponses() && !($decodedSnapshot && $snap->id === $decodedSnapshot->id))
+                                                    <a href="{{ route('nas.show', [$nas, 'snapshot' => $snap->id]) }}"
+                                                       class="btn btn-sm btn-outline-primary py-0 px-2"
+                                                       title="Afficher ce snapshot">
+                                                        <i class="bi bi-display small"></i>
+                                                    </a>
+                                                @endif
                                                 <a href="{{ route('snapshots.show', $snap) }}"
                                                    class="btn btn-sm btn-outline-secondary py-0 px-2"
                                                    title="Voir le snapshot">

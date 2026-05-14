@@ -20,6 +20,11 @@ class NasSnapshot extends Model
         return $this->belongsTo(NasDevice::class, 'nas_id');
     }
 
+    public function hasResponses(): bool
+    {
+        return str_contains($this->raw_json, '"responses":{');
+    }
+
     public function getRawData(): array
     {
         return json_decode($this->raw_json, true) ?? [];
