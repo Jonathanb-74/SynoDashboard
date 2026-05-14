@@ -42,16 +42,17 @@ class VerifyAgentSignature
 
             try {
                 ApiLog::create([
-                    'nas_id'      => $nas->id,
-                    'nas_serial'  => $serial,
-                    'ip_address'  => $request->ip(),
-                    'http_method' => $request->method(),
-                    'path'        => $request->path(),
-                    'status_code' => 401,
-                    'payload'     => $rawBody,
-                    'response'    => $response->getContent(),
-                    'duration_ms' => (int) round((microtime(true) - $startTime) * 1000),
-                    'error'       => 'Invalid HMAC signature',
+                    'nas_id'         => $nas->id,
+                    'nas_serial'     => $serial,
+                    'ip_address'     => $request->ip(),
+                    'http_method'    => $request->method(),
+                    'path'           => $request->path(),
+                    'status_code'    => 401,
+                    'payload'        => $rawBody,
+                    'response'       => $response->getContent(),
+                    'duration_ms'    => (int) round((microtime(true) - $startTime) * 1000),
+                    'error'          => 'Invalid HMAC signature',
+                    'hmac_signature' => $request->header('X-Agent-Signature'),
                 ]);
             } catch (\Throwable) {}
 

@@ -182,6 +182,34 @@ $client->post('/api/v1/agent/ingest', [
 | `server_name` | string | **Oui** | Nom configuré dans DSM |
 | `dsm_version` | string | **Oui** | Version DSM complète (ex: `"DSM 7.2.2-72806"`) |
 
+#### Source des champs dans les APIs DSM
+
+L'agent doit appeler **deux APIs** pour construire `nas_identifier` (les deux nécessitent une authentification) :
+
+| Champ `nas_identifier` | API DSM | Chemin dans la réponse |
+|------------------------|---------|------------------------|
+| `serial` | `SYNO.Core.System` method `info` | `data.serial` |
+| `model` | `SYNO.Core.System` method `info` | `data.model` |
+| `dsm_version` | `SYNO.Core.System` method `info` | `"DSM " + data.firmware_ver` |
+| `server_name` | `SYNO.Core.Network` method `get` | `data.server_name` |
+
+Exemple de réponse `SYNO.Core.Network` (champ utile) :
+
+```json
+{
+  "success": true,
+  "data": {
+    "server_name": "nas-brea",
+    "dns_primary": "192.168.1.1",
+    "gateway": "192.168.1.1",
+    "gateway_info": { "ifname": "ovs_eth0", "ip": "192.168.1.250", ... },
+    "..."
+  }
+}
+```
+
+> Ces deux APIs doivent être appelées lors du **premier cycle** pour initialiser `nas_identifier`. Les valeurs peuvent être mises en cache en mémoire pour les cycles suivants (elles ne changent pas souvent). Si l'une des deux est indisponible sur le NAS, utiliser une valeur de fallback explicite (ex: `"unknown"`) plutôt que de bloquer l'enrôlement.
+
 ### `api_list`
 
 Dictionnaire `{ nom_api: { path, minVersion, maxVersion } }`.  
@@ -268,6 +296,30 @@ Réponse reçue → lire collection_config → appeler les APIs listées → env
 | `apis[].api` | string | Nom de l'API DSM (ex: `"SYNO.Core.System"`) |
 | `apis[].method` | string | Méthode DSM à appeler (ex: `"info"`) |
 | `apis[].version` | integer | Version à utiliser — calculée comme `min(version_modèle, version_max_disponible_sur_le_NAS)` |
+| `apis[].parameters` | object | *(optionnel)* Paramètres supplémentaires à passer à l'appel DSM. Absent si aucun paramètre configuré. |
+
+Exemple avec paramètres :
+
+```json
+"collection_config": {
+  "interval_seconds": 60,
+  "apis": [
+    {
+      "api":        "SYNO.Backup.Task",
+      "method":     "list",
+      "version":    2,
+      "parameters": { "additional": ["task_setting", "owner"] }
+    },
+    {
+      "api":     "SYNO.Core.System",
+      "method":  "info",
+      "version": 3
+    }
+  ]
+}
+```
+
+L'agent doit fusionner `parameters` avec les paramètres de base de l'appel DSM (`api`, `version`, `method`, `_sid`). Si `parameters` est absent, l'appel est fait sans paramètres supplémentaires.
 
 Lorsque `is_new: true`, le NAS est en statut **`pending`** — `collection_config` sera `null` jusqu'à l'approbation et la configuration d'un modèle API dans l'interface.
 

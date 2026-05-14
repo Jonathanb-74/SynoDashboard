@@ -65,11 +65,18 @@ class IngestionService
         $apis = $nas->apiModel->entries
             ->where('enabled', true)
             ->filter(fn($entry) => $availableByName->has($entry->api_name))
-            ->map(fn($entry) => [
-                'api'     => $entry->api_name,
-                'method'  => $entry->method,
-                'version' => min($entry->max_version, $availableByName->get($entry->api_name)->max_version),
-            ])
+            ->map(function ($entry) use ($availableByName) {
+                $autoVersion = min($entry->max_version, $availableByName->get($entry->api_name)->max_version);
+                $item = [
+                    'api'     => $entry->api_name,
+                    'method'  => $entry->method,
+                    'version' => $entry->version ?? $autoVersion,
+                ];
+                if (!empty($entry->parameters)) {
+                    $item['parameters'] = $entry->parameters;
+                }
+                return $item;
+            })
             ->values()
             ->toArray();
 

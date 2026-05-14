@@ -65,16 +65,17 @@ class AgentApiController extends Controller
     ): void {
         try {
             ApiLog::create([
-                'nas_id'      => $nasId,
-                'nas_serial'  => $nasSerial,
-                'ip_address'  => $request->ip(),
-                'http_method' => $request->method(),
-                'path'        => $request->path(),
-                'status_code' => $response->getStatusCode(),
-                'payload'     => $request->getContent(),
-                'response'    => $response->getContent(),
-                'duration_ms' => (int) round((microtime(true) - $startTime) * 1000),
-                'error'       => $error,
+                'nas_id'         => $nasId,
+                'nas_serial'     => $nasSerial,
+                'ip_address'     => $request->ip(),
+                'http_method'    => $request->method(),
+                'path'           => $request->path(),
+                'status_code'    => $response->getStatusCode(),
+                'payload'        => $request->getContent(),
+                'response'       => $response->getContent(),
+                'duration_ms'    => (int) round((microtime(true) - $startTime) * 1000),
+                'error'          => $error,
+                'hmac_signature' => $request->header('X-Agent-Signature'),
             ]);
         } catch (\Throwable) {
             // Logging must never break the API response

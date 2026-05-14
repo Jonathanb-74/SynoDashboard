@@ -51,12 +51,12 @@
 
                         <dt class="col-5 text-muted fw-normal">NAS</dt>
                         <dd class="col-7">
-                            @if($apiLog->nas)
-                                <a href="{{ route('nas.show', $apiLog->nas) }}" class="text-decoration-none">
-                                    {{ $apiLog->nas->name }}
+                            @if($apiLog->nas_id)
+                                <a href="{{ route('nas.show', $apiLog->nas_id) }}" class="text-decoration-none">
+                                    {{ $apiLog->nas?->name ?? $apiLog->nas_serial ?? '#' . $apiLog->nas_id }}
                                 </a>
                             @else
-                                <span class="text-muted fst-italic">inconnu</span>
+                                <span class="text-muted fst-italic">—</span>
                             @endif
                         </dd>
                     </dl>
@@ -69,11 +69,49 @@
             @if($apiLog->error)
             <div class="alert alert-danger d-flex align-items-start gap-2 mb-3 small">
                 <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
-                <div>
-                    <strong>Erreur :</strong> {{ $apiLog->error }}
-                </div>
+                <div><strong>Erreur :</strong> {{ $apiLog->error }}</div>
             </div>
             @endif
+
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-white py-2">
+                    <h6 class="mb-0 fw-semibold small">
+                        <i class="bi bi-shield-lock me-2 text-secondary"></i>Signature HMAC
+                    </h6>
+                </div>
+                <div class="card-body py-2">
+                    @if($apiLog->hmac_signature)
+                        @php
+                            $sig     = $apiLog->hmac_signature;
+                            $hasPrefix = str_starts_with($sig, 'sha256=');
+                            $hexPart   = $hasPrefix ? substr($sig, 7) : $sig;
+                        @endphp
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            @if($hasPrefix)
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">sha256=</span>
+                            @else
+                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle"
+                                      title="Préfixe 'sha256=' manquant">sans préfixe</span>
+                            @endif
+                            <code class="small text-break">{{ $hexPart }}</code>
+                        </div>
+                        <div class="text-muted" style="font-size:.75rem">
+                            Longueur hex : {{ strlen($hexPart) }} caractères
+                            @if(strlen($hexPart) !== 64)
+                                <span class="text-danger fw-semibold ms-1">
+                                    <i class="bi bi-exclamation-triangle"></i> attendu 64 (SHA-256)
+                                </span>
+                            @else
+                                <span class="text-success ms-1"><i class="bi bi-check-circle"></i> valide</span>
+                            @endif
+                        </div>
+                    @else
+                        <span class="text-muted small fst-italic">
+                            <i class="bi bi-dash-circle me-1"></i>Aucun header <code>X-Agent-Signature</code> reçu
+                        </span>
+                    @endif
+                </div>
+            </div>
 
             {{-- Payload --}}
             <div class="card border-0 shadow-sm mb-3" x-data="{ open: true }">

@@ -95,14 +95,21 @@
                                     {{ $log->created_at->format('d/m/Y H:i:s') }}
                                 </td>
                                 <td>
-                                    @if($log->nas)
-                                        <a href="{{ route('nas.show', $log->nas) }}" class="text-decoration-none fw-medium">
-                                            {{ $log->nas->name }}
+                                    @php
+                                        $nasName   = $log->nas?->name;
+                                        $nasSerial = $log->nas_serial;
+                                        $nasLink   = $log->nas_id ? route('nas.show', $log->nas_id) : null;
+                                        $label     = $nasName ?: $nasSerial;
+                                    @endphp
+                                    @if($nasLink)
+                                        <a href="{{ $nasLink }}" class="text-decoration-none fw-medium">
+                                            {{ $label ?? '#' . $log->nas_id }}
                                         </a>
-                                        <span class="text-muted d-block" style="font-size:.75rem">{{ $log->nas_serial }}</span>
-                                    @elseif($log->nas_serial)
-                                        <span class="text-muted font-monospace">{{ $log->nas_serial }}</span>
-                                        <span class="badge bg-secondary ms-1" style="font-size:.65rem">inconnu</span>
+                                        @if($nasName && $nasSerial)
+                                            <span class="text-muted d-block" style="font-size:.75rem">{{ $nasSerial }}</span>
+                                        @endif
+                                    @elseif($nasSerial)
+                                        <span class="text-muted font-monospace">{{ $nasSerial }}</span>
                                     @else
                                         <span class="text-muted fst-italic">—</span>
                                     @endif

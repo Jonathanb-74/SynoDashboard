@@ -6,6 +6,7 @@
             'api_name'    => $e->api_name,
             'path'        => $e->path,
             'method'      => $e->method,
+            'version'     => $e->version,
             'min_version' => $e->min_version,
             'max_version' => $e->max_version,
             'enabled'     => $e->enabled,
@@ -154,6 +155,9 @@
                                 <th style="cursor:pointer" @click="sortBy('max_version')">
                                     Max <i class="bi" :class="sortIcon('max_version', true)"></i>
                                 </th>
+                                <th style="cursor:pointer" @click="sortBy('version')" title="Version forcée à envoyer (si définie)">
+                                    Envoi <i class="bi" :class="sortIcon('version', true)"></i>
+                                </th>
                                 <th>Paramètres</th>
                                 <th style="cursor:pointer" @click="sortBy('enabled')">
                                     Actif <i class="bi" :class="sortIcon('enabled', false)"></i>
@@ -163,7 +167,7 @@
                         </thead>
                         <tbody>
                             <template x-if="filtered.length === 0">
-                                <tr><td colspan="7" class="text-center text-muted py-3">Aucun résultat.</td></tr>
+                                <tr><td colspan="9" class="text-center text-muted py-3">Aucun résultat.</td></tr>
                             </template>
                             <template x-for="entry in filtered" :key="entry.api_name">
                                 <tr>
@@ -172,6 +176,14 @@
                                     <td><span class="badge bg-secondary" x-text="entry.method"></span></td>
                                     <td x-text="'v' + entry.min_version"></td>
                                     <td x-text="'v' + entry.max_version"></td>
+                                    <td>
+                                        <template x-if="entry.version">
+                                            <span class="badge bg-primary" x-text="'v' + entry.version" title="Version forcée"></span>
+                                        </template>
+                                        <template x-if="!entry.version">
+                                            <span class="text-muted small">auto</span>
+                                        </template>
+                                    </td>
                                     <td x-text="entry.parameters || '—'"></td>
                                     <td>
                                         <template x-if="entry.enabled">

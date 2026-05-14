@@ -12,7 +12,7 @@ class ApiLog extends Model
     protected $fillable = [
         'nas_id', 'nas_serial', 'ip_address', 'http_method', 'path',
         'status_code', 'payload', 'response', 'duration_ms', 'error',
-        'created_at',
+        'hmac_signature', 'created_at',
     ];
 
     protected $casts = [
