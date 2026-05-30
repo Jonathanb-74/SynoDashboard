@@ -1,11 +1,6 @@
 <x-app-layout>
     <x-slot name="title">Utilisateurs</x-slot>
 
-    @if(session('success'))
-        <div class="alert alert-success d-flex gap-2 align-items-center">
-            <i class="bi bi-check-circle-fill"></i>{{ session('success') }}
-        </div>
-    @endif
     @if($errors->has('delete') || $errors->has('role'))
         <div class="alert alert-danger">{{ $errors->first('delete') ?: $errors->first('role') }}</div>
     @endif

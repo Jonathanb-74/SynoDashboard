@@ -1,13 +1,6 @@
 <x-app-layout>
     <x-slot name="title">Import / Export</x-slot>
 
-    @if(session('success'))
-        <div class="alert alert-success d-flex align-items-center gap-2">
-            <i class="bi bi-check-circle-fill"></i>
-            {{ session('success') }}
-        </div>
-    @endif
-
     @if($errors->has('export'))
         <div class="alert alert-danger">{{ $errors->first('export') }}</div>
     @endif

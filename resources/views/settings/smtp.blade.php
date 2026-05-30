@@ -1,11 +1,6 @@
 <x-app-layout>
     <x-slot name="title">Configuration SMTP</x-slot>
 
-    @if(session('success'))
-        <div class="alert alert-success d-flex gap-2 align-items-center">
-            <i class="bi bi-check-circle-fill"></i>{{ session('success') }}
-        </div>
-    @endif
     @if($errors->has('smtp_test'))
         <div class="alert alert-danger">{{ $errors->first('smtp_test') }}</div>
     @endif
