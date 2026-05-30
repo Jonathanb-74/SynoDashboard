@@ -16,6 +16,14 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\RequireAdmin::class,
         ]);
 
+        // Trusted reverse proxies — lets $request->ip() return the real client IP
+        $proxies = env('TRUSTED_PROXIES', '');
+        if (!empty($proxies)) {
+            $middleware->trustProxies(
+                at: $proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)),
+            );
+        }
+
         $middleware->web(append: [
             \App\Http\Middleware\RestrictToLan::class,
         ]);
