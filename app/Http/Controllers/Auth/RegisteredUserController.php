@@ -10,26 +10,25 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
-    /**
-     * Display the registration view.
-     */
-    public function create(): View
+    public function create(): View|RedirectResponse
     {
+        if (!config('access.registration_enabled')) {
+            return redirect()->route('login')->with('status', "L'enregistrement est désactivé. Contactez un administrateur.");
+        }
+
         return view('auth.register');
     }
 
-    /**
-     * Handle an incoming registration request.
-     *
-     * @throws ValidationException
-     */
     public function store(Request $request): RedirectResponse
     {
+        if (!config('access.registration_enabled')) {
+            return redirect()->route('login')->with('status', "L'enregistrement est désactivé. Contactez un administrateur.");
+        }
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],

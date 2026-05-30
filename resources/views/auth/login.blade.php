@@ -40,10 +40,12 @@
             <i class="bi bi-box-arrow-in-right me-2"></i>Se connecter
         </button>
 
+        @if(config('access.registration_enabled'))
         <div class="text-center mt-3">
             <a href="{{ route('register') }}" class="small text-muted text-decoration-none">
                 Pas encore de compte ? S'inscrire
             </a>
         </div>
+        @endif
     </form>
 </x-guest-layout>

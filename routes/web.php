@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ApiDebugController;
+use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\ApiLogController;
 use App\Http\Controllers\DocsController;
 use App\Http\Controllers\ImportExportController;
@@ -123,6 +124,10 @@ Route::middleware('auth')->group(function () {
         Route::patch('/users/{user}',     [UserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}',    [UserController::class, 'destroy'])->name('users.destroy');
 
+        // Invitations (admin sends)
+        Route::post('/invitations',                [InvitationController::class, 'store'])->name('invitations.store');
+        Route::delete('/invitations/{invitation}', [InvitationController::class, 'destroy'])->name('invitations.destroy');
+
         // Settings
         Route::get('/settings/api-methods',                                    [ApiMethodOptionController::class, 'index'])->name('settings.api-methods.index');
         Route::post('/settings/api-methods/save-all',                          [ApiMethodOptionController::class, 'saveAll'])->name('settings.api-methods.save-all');
@@ -140,5 +145,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile',  [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+// Invitation acceptance — guest routes (no auth required)
+Route::get('/invitation/{token}',  [InvitationController::class, 'show'])->name('invitations.show');
+Route::post('/invitation/{token}', [InvitationController::class, 'accept'])->name('invitations.accept');
 
 require __DIR__.'/auth.php';

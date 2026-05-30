@@ -16,6 +16,12 @@ return [
     'blocked_cidrs' => env('ADMIN_BLOCKED_CIDRS', ''),
 
     /*
+     * Allow public self-registration at /register.
+     * Set to false in production and use invitations instead.
+     */
+    'registration_enabled' => env('REGISTRATION_ENABLED', false),
+
+    /*
      * Comma-separated IPs/CIDRs of trusted reverse proxies.
      * When set, $request->ip() resolves the real client IP from
      * the X-Forwarded-For header instead of the proxy's IP.

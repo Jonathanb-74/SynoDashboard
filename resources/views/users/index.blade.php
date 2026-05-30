@@ -9,13 +9,21 @@
     @if($errors->has('delete') || $errors->has('role'))
         <div class="alert alert-danger">{{ $errors->first('delete') ?: $errors->first('role') }}</div>
     @endif
+    @if($errors->has('email'))
+        <div class="alert alert-danger">{{ $errors->first('email') }}</div>
+    @endif
 
-    <div class="card border-0 shadow-sm">
+    <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white py-2 d-flex align-items-center justify-content-between">
             <span class="fw-semibold"><i class="bi bi-people me-2 text-primary"></i>Utilisateurs</span>
-            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
-                <i class="bi bi-person-plus me-1"></i>Nouvel utilisateur
-            </button>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#inviteModal">
+                    <i class="bi bi-envelope-plus me-1"></i>Inviter par email
+                </button>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
+                    <i class="bi bi-person-plus me-1"></i>Créer directement
+                </button>
+            </div>
         </div>
 
         <div class="table-responsive">
@@ -74,6 +82,95 @@
                     @endforeach
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    {{-- ─── Invitations en attente ─────────────────────────────────────── --}}
+    @if($invitations->isNotEmpty())
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-2">
+            <span class="fw-semibold small">
+                <i class="bi bi-envelope-open me-2 text-warning"></i>Invitations en attente
+                <span class="badge bg-warning text-dark ms-1">{{ $invitations->count() }}</span>
+            </span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0" style="font-size:.88rem">
+                <thead class="table-light">
+                    <tr>
+                        <th>Email</th>
+                        <th>Rôle</th>
+                        <th>Invité par</th>
+                        <th>Expire le</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($invitations as $inv)
+                    <tr>
+                        <td class="font-monospace">{{ $inv->email }}</td>
+                        <td>
+                            @if($inv->role === 'admin')
+                                <span class="badge bg-danger">Admin</span>
+                            @else
+                                <span class="badge bg-secondary">Utilisateur</span>
+                            @endif
+                        </td>
+                        <td class="text-muted">{{ $inv->invitedBy?->name ?? '—' }}</td>
+                        <td class="text-muted small">{{ $inv->expires_at->format('d/m/Y H:i') }}</td>
+                        <td class="text-end pe-3">
+                            <form method="POST" action="{{ route('invitations.destroy', $inv) }}"
+                                  class="d-inline"
+                                  onsubmit="return confirm('Annuler cette invitation ?')">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" title="Annuler l'invitation">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
+
+    {{-- ─── Invite modal ──────────────────────────────────────────────────── --}}
+    <div class="modal fade" id="inviteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header py-2">
+                    <h6 class="modal-title fw-semibold"><i class="bi bi-envelope-plus me-2"></i>Inviter un utilisateur</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{{ route('invitations.store') }}">
+                    @csrf
+                    <div class="modal-body">
+                        <p class="text-muted small mb-3">
+                            Un email contenant un lien d'invitation (valable 72h) sera envoyé à l'adresse indiquée.
+                        </p>
+                        <div class="mb-3">
+                            <label class="form-label small fw-medium">Adresse email *</label>
+                            <input type="email" name="email" class="form-control form-control-sm"
+                                   value="{{ old('email') }}" required autofocus>
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label small fw-medium">Rôle *</label>
+                            <select name="role" class="form-select form-select-sm">
+                                <option value="user" @selected(old('role','user')==='user')>Utilisateur</option>
+                                <option value="admin" @selected(old('role')==='admin')>Administrateur</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer py-2">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="bi bi-send me-1"></i>Envoyer l'invitation
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 

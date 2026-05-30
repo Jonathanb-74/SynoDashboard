@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Invitation;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -11,9 +12,15 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users      = User::orderBy('name')->get();
-        $adminCount = $users->where('role', 'admin')->count();
-        return view('users.index', compact('users', 'adminCount'));
+        $users       = User::orderBy('name')->get();
+        $adminCount  = $users->where('role', 'admin')->count();
+        $invitations = Invitation::with('invitedBy')
+            ->whereNull('accepted_at')
+            ->where('expires_at', '>', now())
+            ->latest('created_at')
+            ->get();
+
+        return view('users.index', compact('users', 'adminCount', 'invitations'));
     }
 
     public function store(Request $request)
