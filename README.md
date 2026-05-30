@@ -96,8 +96,11 @@ php artisan storage:link
 
 1. Ouvrir `APP_URL/register`
 2. Créer votre compte — **le premier utilisateur enregistré est automatiquement administrateur**
-3. Optionnel : désactiver l'inscription libre après création du premier compte  
-   Dans `routes/auth.php`, commenter ou supprimer la route `register`
+3. Désactiver l'inscription libre dans `.env` pour que les nouveaux comptes passent par invitation :
+   ```env
+   REGISTRATION_ENABLED=false
+   ```
+4. Inviter les utilisateurs suivants depuis **Administration → Utilisateurs → Inviter par email**
 
 ---
 
@@ -145,6 +148,27 @@ Les migrations s'appliquent dans l'ordre suivant :
 | 9 | `nas_api_available` | APIs disponibles par NAS |
 | 10 | `nas_snapshots` | Snapshots de collecte |
 | … | Migrations additionnelles | Évolutions de schéma |
+
+---
+
+## Mise à jour en production
+
+```bash
+# 1. Récupérer les dernières modifications
+git pull origin main
+
+# 2. Mettre à jour les dépendances PHP si nécessaire
+composer install --no-dev --optimize-autoloader
+
+# 3. Appliquer les nouvelles migrations
+php artisan migrate --force
+
+# 4. Vider les caches
+php artisan config:clear
+php artisan cache:clear
+```
+
+> **Remarque :** les assets front-end (`public/build/`) sont versionnés dans le dépôt, aucun `npm run build` n'est nécessaire sur le serveur.
 
 ---
 

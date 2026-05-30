@@ -11,7 +11,10 @@
         [x-cloak] { display: none !important; }
         body { background-color: #f0f2f5; }
         .sidebar {
-            min-height: 100vh;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
             background: #1a1d23;
             width: 250px;
             flex-shrink: 0;
