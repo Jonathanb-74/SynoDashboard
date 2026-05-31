@@ -16,6 +16,7 @@ class SmtpSettingController extends Controller
         'mail.mailers.smtp.encryption',
         'mail.from.address',
         'mail.from.name',
+        'mail.default',
     ];
 
     public function edit()
@@ -41,10 +42,17 @@ class SmtpSettingController extends Controller
 
         AppSetting::setMany($data['mail'] ? $this->flattenDotKeys('mail', $data['mail']) : []);
 
+        // Always activate SMTP as default mailer
+        AppSetting::set('mail.default', 'smtp');
+
         // Apply immediately to the running config
+        config(['mail.default' => 'smtp']);
         foreach (self::KEYS as $key) {
             config([$key => AppSetting::get($key) ?: null]);
         }
+
+        // Purge cached mailer so next send picks up new settings
+        Mail::purge('smtp');
 
         return back()->with('success', 'Configuration SMTP enregistrée.');
     }
@@ -56,9 +64,13 @@ class SmtpSettingController extends Controller
         ])['to'];
 
         try {
-            Mail::raw('Ceci est un email de test envoyé depuis SynoManager.', function ($message) use ($to) {
-                $message->to($to)->subject('[SynoManager] Test SMTP');
-            });
+            // Purge cached mailer to force use of current DB config
+            Mail::purge('smtp');
+
+            Mail::mailer('smtp')->raw(
+                'Ceci est un email de test envoyé depuis SynoManager.',
+                fn($m) => $m->to($to)->subject('[SynoManager] Test SMTP')
+            );
 
             return back()->with('success', "Email de test envoyé à « {$to} ».");
         } catch (\Throwable $e) {

@@ -21,18 +21,20 @@
             </div>
         </div>
 
+        <div x-data="tableController()" x-init="init()">
+        <x-table-search />
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" style="font-size:.9rem">
-                <thead class="table-light">
+                <thead class="table-light user-select-none">
                     <tr>
-                        <th>Nom</th>
-                        <th>Email</th>
-                        <th>Rôle</th>
-                        <th>Créé le</th>
+                        <th @click="sortBy(0)" style="cursor:pointer">Nom <i class="bi small ms-1" :class="sortIcon(0)"></i></th>
+                        <th @click="sortBy(1)" style="cursor:pointer">Email <i class="bi small ms-1" :class="sortIcon(1)"></i></th>
+                        <th @click="sortBy(2)" style="cursor:pointer">Rôle <i class="bi small ms-1" :class="sortIcon(2)"></i></th>
+                        <th @click="sortBy(3)" style="cursor:pointer">Créé le <i class="bi small ms-1" :class="sortIcon(3)"></i></th>
                         <th></th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody x-ref="tbody">
                     @foreach($users as $user)
                     <tr>
                         <td class="fw-medium">
@@ -78,6 +80,7 @@
                 </tbody>
             </table>
         </div>
+        </div>{{-- /tableController --}}
     </div>
 
     {{-- ─── Invitations en attente ─────────────────────────────────────── --}}
@@ -114,6 +117,12 @@
                         <td class="text-muted">{{ $inv->invitedBy?->name ?? '—' }}</td>
                         <td class="text-muted small">{{ $inv->expires_at->format('d/m/Y H:i') }}</td>
                         <td class="text-end pe-3">
+                            <form method="POST" action="{{ route('invitations.resend', $inv) }}" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-outline-primary py-0 px-2" title="Renvoyer l'email d'invitation">
+                                    <i class="bi bi-send"></i>
+                                </button>
+                            </form>
                             <form method="POST" action="{{ route('invitations.destroy', $inv) }}"
                                   class="d-inline"
                                   onsubmit="return confirm('Annuler cette invitation ?')">

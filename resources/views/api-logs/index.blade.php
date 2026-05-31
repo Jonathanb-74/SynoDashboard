@@ -76,19 +76,20 @@
                     Aucun log pour ces critères.
                 </div>
             @else
+                <div x-data="tableController()" x-init="init()">
                 <div class="table-responsive">
                     <table class="table table-sm table-hover align-middle mb-0 small">
-                        <thead class="table-light">
+                        <thead class="table-light user-select-none">
                             <tr>
-                                <th>Date / Heure</th>
-                                <th>NAS</th>
-                                <th>IP</th>
-                                <th>Statut</th>
-                                <th>Durée</th>
+                                <th @click="sortBy(0)" style="cursor:pointer">Date / Heure <i class="bi small ms-1" :class="sortIcon(0)"></i></th>
+                                <th @click="sortBy(1)" style="cursor:pointer">NAS <i class="bi small ms-1" :class="sortIcon(1)"></i></th>
+                                <th @click="sortBy(2)" style="cursor:pointer">IP <i class="bi small ms-1" :class="sortIcon(2)"></i></th>
+                                <th @click="sortBy(3)" style="cursor:pointer">Statut <i class="bi small ms-1" :class="sortIcon(3)"></i></th>
+                                <th @click="sortBy(4)" style="cursor:pointer">Durée <i class="bi small ms-1" :class="sortIcon(4)"></i></th>
                                 <th></th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody x-ref="tbody">
                             @foreach($logs as $log)
                             <tr>
                                 <td class="text-nowrap font-monospace">
@@ -138,6 +139,7 @@
                         </tbody>
                     </table>
                 </div>
+                </div>{{-- /tableController --}}
                 <div class="card-footer bg-white">
                     {{ $logs->links() }}
                 </div>

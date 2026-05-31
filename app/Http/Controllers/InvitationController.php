@@ -40,6 +40,19 @@ class InvitationController extends Controller
             ->with('success', "Invitation envoyée à {$invitation->email}.");
     }
 
+    public function resend(Invitation $invitation): RedirectResponse
+    {
+        abort_unless($invitation->isPending(), 422, 'Cette invitation est expirée ou déjà utilisée.');
+
+        // Repousser l'expiration de 72h depuis maintenant
+        $invitation->update(['expires_at' => now()->addHours(72)]);
+
+        Mail::to($invitation->email)->send(new InvitationMail($invitation));
+
+        return redirect()->route('users.index')
+            ->with('success', "Invitation renvoyée à {$invitation->email}.");
+    }
+
     public function destroy(Invitation $invitation): RedirectResponse
     {
         $invitation->delete();

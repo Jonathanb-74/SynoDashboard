@@ -102,6 +102,7 @@
             <i class="bi bi-code-square me-2"></i>Décodeurs JSON
         </a>
 
+        @if(auth()->user()->isAdmin())
         <div class="nav-section">Outils</div>
         <a href="{{ route('test.index') }}"
            class="nav-link {{ request()->routeIs('test.*') ? 'active' : '' }}">
@@ -119,6 +120,7 @@
            class="nav-link {{ request()->routeIs('api-logs.*') ? 'active' : '' }}">
             <i class="bi bi-journal-code me-2"></i>Logs API Agent
         </a>
+        @endif
 
         @auth
         @if(auth()->user()->isAdmin())
@@ -202,6 +204,65 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function tableController() {
+    return {
+        search: '',
+        _sortCol: -1,
+        _sortDir: 'asc',
+        _rows: [],
+
+        init() {
+            const tbody = this.$refs.tbody;
+            if (!tbody) return;
+            this._rows = Array.from(tbody.querySelectorAll('tr')).map(tr => ({
+                el: tr,
+                cells: Array.from(tr.querySelectorAll('td')).map(td =>
+                    (td.dataset.sort ?? td.textContent).trim().toLowerCase()
+                ),
+            }));
+        },
+
+        sortBy(col) {
+            if (this._sortCol === col) {
+                this._sortDir = this._sortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                this._sortCol = col;
+                this._sortDir = 'asc';
+            }
+            this._render();
+        },
+
+        sortIcon(col) {
+            if (this._sortCol !== col) return 'bi-arrow-down-up opacity-50';
+            return this._sortDir === 'asc' ? 'bi-sort-alpha-down' : 'bi-sort-alpha-up';
+        },
+
+        _render() {
+            const tbody = this.$refs.tbody;
+            if (!tbody) return;
+            const q = this.search.toLowerCase().trim();
+
+            let rows = this._rows.filter(r => !q || r.cells.some(c => c.includes(q)));
+
+            if (this._sortCol >= 0) {
+                rows.sort((a, b) => {
+                    const av = a.cells[this._sortCol] ?? '';
+                    const bv = b.cells[this._sortCol] ?? '';
+                    const cmp = av.localeCompare(bv, undefined, { numeric: true, sensitivity: 'base' });
+                    return this._sortDir === 'asc' ? cmp : -cmp;
+                });
+            }
+
+            this._rows.forEach(r => r.el.hidden = true);
+            rows.forEach(r => { r.el.hidden = false; tbody.appendChild(r.el); });
+        },
+
+        get _visibleCount() { return this._rows.filter(r => !r.el.hidden).length; },
+        get _totalCount()   { return this._rows.length; },
+    };
+}
+</script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 @stack('scripts')
 </body>

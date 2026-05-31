@@ -45,8 +45,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/snapshots/{snapshot}/raw',  [SnapshotController::class, 'raw'])->name('snapshots.raw');
 
     // Test console
-    Route::get('/test',       [NasTestController::class, 'index'])->name('test.index');
-    Route::post('/test/run',  [NasTestController::class, 'run'])->name('test.run');
 
     // API models
     Route::resource('api-models', ApiModelController::class);
@@ -99,28 +97,30 @@ Route::middleware('auth')->group(function () {
     Route::delete('decoder-models/{decoderModel}/blocks/{block}/elements/{element}/columns/{column}/sub-columns/{subColumn}',
         [DecoderModelController::class, 'destroySubColumn'])->name('decoder-models.destroySubColumn');
 
-    // Docs
-    Route::get('/docs/agent-api', [DocsController::class, 'agentApi'])->name('docs.agent-api');
-
-    // Import / Export
-    Route::get('/import-export',                    [ImportExportController::class, 'index'])->name('import-export.index');
-    Route::post('/import-export/export',            [ImportExportController::class, 'export'])->name('import-export.export');
-    Route::post('/import-export/import',            [ImportExportController::class, 'import'])->name('import-export.import');
-    Route::post('/import-export/import/confirm',    [ImportExportController::class, 'importConfirm'])->name('import-export.import.confirm');
-    Route::post('/import-export/import/cancel',     [ImportExportController::class, 'importCancel'])->name('import-export.import.cancel');
-
-    // API logs
-    Route::get('/api-logs',              [ApiLogController::class, 'index'])->name('api-logs.index');
-    Route::get('/api-logs/{apiLog}',     [ApiLogController::class, 'show'])->name('api-logs.show');
-    Route::delete('/api-logs',           [ApiLogController::class, 'destroy'])->name('api-logs.destroy');
-
-    // API method debug
-    Route::get('/debug/api-method',          [ApiDebugController::class, 'index'])->name('debug.api-method.index');
-    Route::post('/debug/api-method/probe',   [ApiDebugController::class, 'probe'])->name('debug.api-method.probe');
-    Route::post('/debug/api-method/apply',   [ApiDebugController::class, 'apply'])->name('debug.api-method.apply');
-
     // Admin-only routes
     Route::middleware('admin')->group(function () {
+
+        // Test console
+        Route::get('/test',      [NasTestController::class, 'index'])->name('test.index');
+        Route::post('/test/run', [NasTestController::class, 'run'])->name('test.run');
+
+        // API logs
+        Route::get('/api-logs',              [ApiLogController::class, 'index'])->name('api-logs.index');
+        Route::get('/api-logs/{apiLog}',     [ApiLogController::class, 'show'])->name('api-logs.show');
+        Route::delete('/api-logs',           [ApiLogController::class, 'destroy'])->name('api-logs.destroy');
+
+        // API method debug
+        Route::get('/debug/api-method',          [ApiDebugController::class, 'index'])->name('debug.api-method.index');
+        Route::post('/debug/api-method/probe',   [ApiDebugController::class, 'probe'])->name('debug.api-method.probe');
+        Route::post('/debug/api-method/apply',   [ApiDebugController::class, 'apply'])->name('debug.api-method.apply');
+
+        // Docs & Import/Export
+        Route::get('/docs/agent-api', [DocsController::class, 'agentApi'])->name('docs.agent-api');
+        Route::get('/import-export',                 [ImportExportController::class, 'index'])->name('import-export.index');
+        Route::post('/import-export/export',         [ImportExportController::class, 'export'])->name('import-export.export');
+        Route::post('/import-export/import',         [ImportExportController::class, 'import'])->name('import-export.import');
+        Route::post('/import-export/import/confirm', [ImportExportController::class, 'importConfirm'])->name('import-export.import.confirm');
+        Route::post('/import-export/import/cancel',  [ImportExportController::class, 'importCancel'])->name('import-export.import.cancel');
 
         // User management
         Route::get('/users',              [UserController::class, 'index'])->name('users.index');
@@ -131,6 +131,7 @@ Route::middleware('auth')->group(function () {
         // Invitations (admin sends)
         Route::post('/invitations',                [InvitationController::class, 'store'])->name('invitations.store');
         Route::delete('/invitations/{invitation}', [InvitationController::class, 'destroy'])->name('invitations.destroy');
+        Route::post('/invitations/{invitation}/resend', [InvitationController::class, 'resend'])->name('invitations.resend');
 
         // Settings
         Route::get('/settings/api-methods',                                    [ApiMethodOptionController::class, 'index'])->name('settings.api-methods.index');

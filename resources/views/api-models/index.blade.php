@@ -15,18 +15,20 @@
                     Aucun modèle API.
                 </div>
             @else
+                <div x-data="tableController()" x-init="init()">
+                <x-table-search />
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
+                        <thead class="table-light user-select-none">
                             <tr>
-                                <th>Nom</th>
-                                <th>Description</th>
-                                <th>Entrées API</th>
-                                <th>Décodeur JSON lié</th>
+                                <th @click="sortBy(0)" style="cursor:pointer">Nom <i class="bi small ms-1" :class="sortIcon(0)"></i></th>
+                                <th @click="sortBy(1)" style="cursor:pointer">Description <i class="bi small ms-1" :class="sortIcon(1)"></i></th>
+                                <th @click="sortBy(2)" style="cursor:pointer">Entrées API <i class="bi small ms-1" :class="sortIcon(2)"></i></th>
+                                <th @click="sortBy(3)" style="cursor:pointer">Décodeur JSON lié <i class="bi small ms-1" :class="sortIcon(3)"></i></th>
                                 <th></th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody x-ref="tbody">
                             @foreach($models as $model)
                             <tr>
                                 <td class="fw-medium">{{ $model->name }}</td>
@@ -72,6 +74,7 @@
                         </tbody>
                     </table>
                 </div>
+                </div>{{-- /tableController --}}
             @endif
         </div>
     </div>

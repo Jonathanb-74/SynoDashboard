@@ -15,9 +15,15 @@ class NasController extends Controller
 {
     public function __construct(private JsonDecoderService $decoderService) {}
 
-    public function index()
+    public function index(Request $request)
     {
-        $configuredView = NasViewTable::getDefault('nas');
+        $allViews = NasViewTable::with('columns')->orderBy('name')->get();
+
+        if ($request->filled('view')) {
+            $configuredView = $allViews->firstWhere('id', (int) $request->query('view'));
+        } else {
+            $configuredView = $allViews->firstWhere('is_nas_page_default', true);
+        }
 
         $query = NasDevice::with(['apiModel', 'decoderModel', 'latestSnapshot'])
             ->withCount('snapshots')
@@ -33,7 +39,7 @@ class NasController extends Controller
         $nasList         = $query->get();
         $customFieldDefs = NasCustomFieldDefinition::orderBy('position')->get();
 
-        return view('nas.index', compact('nasList', 'configuredView', 'customFieldDefs'));
+        return view('nas.index', compact('nasList', 'configuredView', 'allViews', 'customFieldDefs'));
     }
 
     public function show(Request $request, NasDevice $nas)

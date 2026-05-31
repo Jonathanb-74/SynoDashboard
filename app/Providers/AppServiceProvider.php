@@ -34,6 +34,12 @@ class AppServiceProvider extends ServiceProvider
             foreach (AppSetting::getGroup('mail.') as $key => $value) {
                 config([$key => $value ?: null]);
             }
+
+            // Ensure the default mailer is explicitly set if stored
+            $default = AppSetting::get('mail.default');
+            if ($default) {
+                config(['mail.default' => $default]);
+            }
         } catch (\Throwable) {
             // DB not ready (first install, artisan commands, etc.)
         }
