@@ -24,6 +24,112 @@
         {{-- ─── Colonne gauche ─────────────────────────────── --}}
         <div class="col-xl-3 col-lg-4">
 
+            {{-- Informations client (champs personnalisés) --}}
+            @if($customFieldDefs->isNotEmpty())
+            <div class="card border-0 shadow-sm mb-3" x-data="{ editing: false }">
+                <div class="card-header bg-white d-flex align-items-center justify-content-between py-2">
+                    <h6 class="mb-0 fw-semibold small">
+                        <i class="bi bi-person-vcard me-2 text-primary"></i>Informations client
+                    </h6>
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2"
+                            x-show="!editing" @click="editing = true" title="Modifier">
+                        <i class="bi bi-pencil small"></i>
+                    </button>
+                </div>
+
+                {{-- Vue statique --}}
+                <div x-show="!editing" class="card-body py-2 px-3">
+                    @php
+                        $filledDefs = $customFieldDefs->filter(function($def) use ($customFieldValues) {
+                            $val = $customFieldValues[$def->id]->value ?? null;
+                            return $val !== null && $val !== '';
+                        });
+                    @endphp
+                    @if($filledDefs->isEmpty())
+                        <p class="text-muted small fst-italic mb-0">Aucune information renseignée.
+                            <button type="button" class="btn btn-link btn-sm p-0 text-muted"
+                                    @click="editing = true">Remplir</button>
+                        </p>
+                    @else
+                    <table class="table table-sm mb-0" style="font-size:.82rem">
+                        @foreach($filledDefs as $def)
+                        @php $val = $customFieldValues[$def->id]->value; @endphp
+                        <tr>
+                            <td class="text-muted fw-medium pe-2 text-nowrap" style="width:40%">{{ $def->label }}</td>
+                            <td>
+                                @if($def->type === 'boolean')
+                                    @if($val === '1')
+                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                    @else
+                                        <i class="bi bi-x-circle text-danger"></i>
+                                    @endif
+                                @elseif($def->type === 'date')
+                                    {{ \Carbon\Carbon::parse($val)->format('d/m/Y') }}
+                                @elseif($def->type === 'textarea')
+                                    <span style="white-space:pre-wrap">{{ $val }}</span>
+                                @else
+                                    {{ $val }}
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+                    </table>
+                    @endif
+                </div>
+
+                {{-- Formulaire d'édition --}}
+                <div x-show="editing" x-cloak>
+                    <form method="POST" action="{{ route('nas.custom-fields.update', $nas) }}">
+                        @csrf
+                        <div class="card-body py-2 px-3">
+                            @foreach($customFieldDefs as $def)
+                            @php $val = $customFieldValues[$def->id]->value ?? null; @endphp
+                            <div class="mb-2">
+                                <label class="form-label small fw-medium mb-1">{{ $def->label }}</label>
+                                @if($def->type === 'text')
+                                    <input type="text" name="field_{{ $def->id }}"
+                                           class="form-control form-control-sm"
+                                           value="{{ $val }}">
+                                @elseif($def->type === 'textarea')
+                                    <textarea name="field_{{ $def->id }}"
+                                              class="form-control form-control-sm" rows="3">{{ $val }}</textarea>
+                                @elseif($def->type === 'date')
+                                    <input type="date" name="field_{{ $def->id }}"
+                                           class="form-control form-control-sm"
+                                           value="{{ $val }}">
+                                @elseif($def->type === 'boolean')
+                                    <div class="form-check">
+                                        <input type="checkbox" name="field_{{ $def->id }}"
+                                               class="form-check-input"
+                                               id="cf_{{ $def->id }}"
+                                               {{ $val === '1' ? 'checked' : '' }}>
+                                        <label class="form-check-label small" for="cf_{{ $def->id }}">Oui</label>
+                                    </div>
+                                @elseif($def->type === 'select')
+                                    <select name="field_{{ $def->id }}" class="form-select form-select-sm">
+                                        <option value="">— Choisir —</option>
+                                        @foreach($def->options ?? [] as $opt)
+                                            <option value="{{ $opt }}" {{ $val === $opt ? 'selected' : '' }}>
+                                                {{ $opt }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                @endif
+                            </div>
+                            @endforeach
+                        </div>
+                        <div class="card-footer bg-white py-2 d-flex gap-2 justify-content-end">
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    @click="editing = false">Annuler</button>
+                            <button type="submit" class="btn btn-sm btn-primary">
+                                <i class="bi bi-check-lg me-1"></i>Enregistrer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            @endif
+
             {{-- Fiche NAS --}}
             <div class="card border-0 shadow-sm mb-3">
                 <div class="card-header bg-white d-flex align-items-center justify-content-between">

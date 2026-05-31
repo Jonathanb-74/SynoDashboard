@@ -135,6 +135,10 @@
            class="nav-link {{ request()->routeIs('settings.smtp.*') ? 'active' : '' }}">
             <i class="bi bi-envelope-at me-2"></i>Configuration SMTP
         </a>
+        <a href="{{ route('settings.nas-fields.index') }}"
+           class="nav-link {{ request()->routeIs('settings.nas-fields.*') ? 'active' : '' }}">
+            <i class="bi bi-card-list me-2"></i>Champs NAS
+        </a>
         @endif
         @endauth
 

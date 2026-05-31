@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\ApiModel;
 use App\Models\JsonDecoderModel;
+use App\Models\NasCustomFieldDefinition;
+use App\Models\NasCustomFieldValue;
 use App\Models\NasDevice;
 use App\Services\JsonDecoderService;
 use Illuminate\Http\Request;
@@ -62,7 +64,35 @@ class NasController extends Controller
         $allApiModels     = ApiModel::orderBy('name')->get();
         $allDecoderModels = JsonDecoderModel::orderBy('name')->get();
 
-        return view('nas.show', compact('nas', 'snapshots', 'decodedData', 'decodedSnapshot', 'allApiModels', 'allDecoderModels'));
+        $customFieldDefs    = NasCustomFieldDefinition::orderBy('position')->orderBy('id')->get();
+        $customFieldValues  = NasCustomFieldValue::where('nas_id', $nas->id)->get()->keyBy('definition_id');
+
+        return view('nas.show', compact(
+            'nas', 'snapshots', 'decodedData', 'decodedSnapshot',
+            'allApiModels', 'allDecoderModels',
+            'customFieldDefs', 'customFieldValues'
+        ));
+    }
+
+    public function updateCustomFields(Request $request, NasDevice $nas)
+    {
+        $definitions = NasCustomFieldDefinition::all();
+
+        foreach ($definitions as $def) {
+            $key   = 'field_' . $def->id;
+            $value = match ($def->type) {
+                'boolean' => $request->has($key) ? '1' : '0',
+                default   => $request->input($key),
+            };
+
+            NasCustomFieldValue::updateOrCreate(
+                ['nas_id' => $nas->id, 'definition_id' => $def->id],
+                ['value'  => $value]
+            );
+        }
+
+        return redirect()->route('nas.show', $nas)
+            ->with('success', 'Informations client enregistrées.');
     }
 
     public function redecode(NasDevice $nas)

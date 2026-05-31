@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ApiDebugController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\NasCustomFieldDefinitionController;
 use App\Http\Controllers\ApiLogController;
 use App\Http\Controllers\DocsController;
 use App\Http\Controllers\ImportExportController;
@@ -34,6 +35,7 @@ Route::middleware('auth')->group(function () {
     // NAS CRUD
     Route::resource('nas', NasController::class)->only(['index', 'show', 'update', 'destroy'])->parameters(['nas' => 'nas']);
     Route::post('/nas/{nas}/redecode',        [NasController::class, 'redecode'])->name('nas.redecode');
+    Route::post('/nas/{nas}/custom-fields',   [NasController::class, 'updateCustomFields'])->name('nas.custom-fields.update');
     Route::post('/nas/{nas}/regenerate-hmac', [NasController::class, 'regenerateHmac'])->name('nas.regenerate-hmac');
 
     // Snapshots
@@ -137,6 +139,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/settings/smtp',       [SmtpSettingController::class, 'edit'])->name('settings.smtp.edit');
         Route::post('/settings/smtp',      [SmtpSettingController::class, 'update'])->name('settings.smtp.update');
         Route::post('/settings/smtp/test', [SmtpSettingController::class, 'test'])->name('settings.smtp.test');
+
+        // NAS custom fields definitions
+        Route::get('/settings/nas-fields',                       [NasCustomFieldDefinitionController::class, 'index'])->name('settings.nas-fields.index');
+        Route::post('/settings/nas-fields',                      [NasCustomFieldDefinitionController::class, 'store'])->name('settings.nas-fields.store');
+        Route::patch('/settings/nas-fields/{def}',               [NasCustomFieldDefinitionController::class, 'update'])->name('settings.nas-fields.update');
+        Route::delete('/settings/nas-fields/{def}',              [NasCustomFieldDefinitionController::class, 'destroy'])->name('settings.nas-fields.destroy');
+        Route::post('/settings/nas-fields/reorder',              [NasCustomFieldDefinitionController::class, 'reorder'])->name('settings.nas-fields.reorder');
 
     });
 
