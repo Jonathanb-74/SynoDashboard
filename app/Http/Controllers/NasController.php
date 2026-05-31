@@ -7,6 +7,7 @@ use App\Models\JsonDecoderModel;
 use App\Models\NasCustomFieldDefinition;
 use App\Models\NasCustomFieldValue;
 use App\Models\NasDevice;
+use App\Models\NasViewTable;
 use App\Services\JsonDecoderService;
 use Illuminate\Http\Request;
 
@@ -16,12 +17,23 @@ class NasController extends Controller
 
     public function index()
     {
-        $nasList = NasDevice::with(['apiModel', 'decoderModel', 'latestSnapshot'])
-            ->withCount('snapshots')
-            ->orderByDesc('last_contact_at')
-            ->get();
+        $configuredView = NasViewTable::getDefault('nas');
 
-        return view('nas.index', compact('nasList'));
+        $query = NasDevice::with(['apiModel', 'decoderModel', 'latestSnapshot'])
+            ->withCount('snapshots')
+            ->orderByDesc('last_contact_at');
+
+        $needsCustomFields = $configuredView
+            && $configuredView->columns->where('source', 'custom_field')->isNotEmpty();
+
+        if ($needsCustomFields) {
+            $query->with('customFieldValues');
+        }
+
+        $nasList         = $query->get();
+        $customFieldDefs = NasCustomFieldDefinition::orderBy('position')->get();
+
+        return view('nas.index', compact('nasList', 'configuredView', 'customFieldDefs'));
     }
 
     public function show(Request $request, NasDevice $nas)

@@ -3,7 +3,12 @@
 
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white d-flex align-items-center justify-content-between">
-            <h6 class="mb-0 fw-semibold">Tous les NAS ({{ $nasList->count() }})</h6>
+            <h6 class="mb-0 fw-semibold">
+                Tous les NAS ({{ $nasList->count() }})
+                @if($configuredView)
+                    <span class="text-muted fw-normal small ms-2">— Vue : {{ $configuredView->name }}</span>
+                @endif
+            </h6>
             <a href="{{ route('test.index') }}" class="btn btn-sm btn-primary">
                 <i class="bi bi-plus-circle me-1"></i>Tester un NAS
             </a>
@@ -14,7 +19,45 @@
                     <i class="bi bi-hdd-stack display-4 d-block mb-2 opacity-25"></i>
                     Aucun NAS enregistré.
                 </div>
+            @elseif($configuredView && $configuredView->columns->isNotEmpty())
+                {{-- Vue configurée --}}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                @foreach($configuredView->columns as $col)
+                                    <th>{{ $col->label ?: $col->getDisplayLabel() }}</th>
+                                @endforeach
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($nasList as $nas)
+                            <tr>
+                                @foreach($configuredView->columns as $col)
+                                <td>
+                                    <x-nas-table-cell :nas="$nas" :column="$col" :customFieldDefs="$customFieldDefs" />
+                                </td>
+                                @endforeach
+                                <td class="text-end">
+                                    <a href="{{ route('nas.show', $nas) }}" class="btn btn-sm btn-outline-secondary me-1">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <form method="POST" action="{{ route('nas.destroy', $nas) }}" class="d-inline"
+                                          onsubmit="return confirm('Supprimer ce NAS et toutes ses données ?')">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             @else
+                {{-- Vue par défaut (aucune vue configurée) --}}
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
@@ -57,8 +100,7 @@
                                     </a>
                                     <form method="POST" action="{{ route('nas.destroy', $nas) }}" class="d-inline"
                                           onsubmit="return confirm('Supprimer ce NAS et toutes ses données ?')">
-                                        @csrf
-                                        @method('DELETE')
+                                        @csrf @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-outline-danger">
                                             <i class="bi bi-trash"></i>
                                         </button>

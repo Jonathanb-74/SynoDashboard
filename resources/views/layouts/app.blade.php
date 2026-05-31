@@ -139,6 +139,14 @@
            class="nav-link {{ request()->routeIs('settings.nas-fields.*') ? 'active' : '' }}">
             <i class="bi bi-card-list me-2"></i>Champs NAS
         </a>
+        <a href="{{ route('settings.nas-views.index') }}"
+           class="nav-link {{ request()->routeIs('settings.nas-views.*') ? 'active' : '' }}">
+            <i class="bi bi-table me-2"></i>Vues NAS
+        </a>
+        <a href="{{ route('settings.dashboard-widgets.index') }}"
+           class="nav-link {{ request()->routeIs('settings.dashboard-widgets.*') ? 'active' : '' }}">
+            <i class="bi bi-grid-1x2 me-2"></i>Widgets Dashboard
+        </a>
         @endif
         @endauth
 

@@ -1,66 +1,55 @@
 <x-app-layout>
     <x-slot name="title">Dashboard</x-slot>
 
-    {{-- Stats --}}
-    <div class="row g-3 mb-4">
-        <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body d-flex align-items-center gap-3">
-                    <div class="rounded-circle bg-primary bg-opacity-10 p-3">
-                        <i class="bi bi-hdd-stack fs-4 text-primary"></i>
-                    </div>
-                    <div>
-                        <div class="fs-2 fw-bold">{{ $stats['total'] }}</div>
-                        <div class="text-muted small">NAS total</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body d-flex align-items-center gap-3">
-                    <div class="rounded-circle bg-success bg-opacity-10 p-3">
-                        <i class="bi bi-check-circle fs-4 text-success"></i>
-                    </div>
-                    <div>
-                        <div class="fs-2 fw-bold">{{ $stats['approved'] }}</div>
-                        <div class="text-muted small">Approuvés</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body d-flex align-items-center gap-3">
-                    <div class="rounded-circle bg-warning bg-opacity-10 p-3">
-                        <i class="bi bi-clock-history fs-4 text-warning"></i>
-                    </div>
-                    <div>
-                        <div class="fs-2 fw-bold">{{ $stats['pending'] }}</div>
-                        <div class="text-muted small">En attente</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body d-flex align-items-center gap-3">
-                    <div class="rounded-circle bg-danger bg-opacity-10 p-3">
-                        <i class="bi bi-x-circle fs-4 text-danger"></i>
-                    </div>
-                    <div>
-                        <div class="fs-2 fw-bold">{{ $stats['rejected'] }}</div>
-                        <div class="text-muted small">Rejetés</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    @php
+        $builtinIcons = [
+            'total'    => ['icon' => 'bi-hdd-stack',    'bg' => 'primary'],
+            'approved' => ['icon' => 'bi-check-circle', 'bg' => 'success'],
+            'pending'  => ['icon' => 'bi-clock-history','bg' => 'warning'],
+            'rejected' => ['icon' => 'bi-x-circle',     'bg' => 'danger'],
+        ];
+    @endphp
 
-    {{-- NAS List --}}
+    {{-- Widgets --}}
+    @if($widgets->isNotEmpty())
+    <div class="row g-3 mb-4">
+        @foreach($widgets as $widget)
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-{{ $widget->color }} bg-opacity-10 p-3">
+                        @if($widget->isBuiltin())
+                            <i class="bi {{ $builtinIcons[$widget->builtin_key]['icon'] ?? 'bi-bar-chart' }} fs-4 text-{{ $widget->color }}"></i>
+                        @else
+                            <i class="bi bi-bar-chart fs-4 text-{{ $widget->color }}"></i>
+                        @endif
+                    </div>
+                    <div>
+                        <div class="fs-2 fw-bold">
+                            @if($widget->isBuiltin())
+                                {{ $builtinCounts[$widget->builtin_key] ?? 0 }}
+                            @else
+                                {{ $widgetCounts[$widget->id] ?? 0 }}
+                            @endif
+                        </div>
+                        <div class="text-muted small">{{ $widget->label }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endforeach
+    </div>
+    @endif
+
+    {{-- Tableau NAS --}}
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white d-flex align-items-center justify-content-between">
-            <h6 class="mb-0 fw-semibold">Tous les NAS</h6>
+            <h6 class="mb-0 fw-semibold">
+                Tous les NAS
+                @if($configuredView)
+                    <span class="text-muted fw-normal small ms-2">— Vue : {{ $configuredView->name }}</span>
+                @endif
+            </h6>
             <a href="{{ route('test.index') }}" class="btn btn-sm btn-primary">
                 <i class="bi bi-plus-circle me-1"></i>Tester un NAS
             </a>
@@ -71,7 +60,38 @@
                     <i class="bi bi-hdd-stack display-4 d-block mb-2 opacity-25"></i>
                     Aucun NAS enregistré. <a href="{{ route('test.index') }}">Tester un NAS</a> pour commencer.
                 </div>
+            @elseif($configuredView && $configuredView->columns->isNotEmpty())
+                {{-- Vue configurée --}}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                @foreach($configuredView->columns as $col)
+                                    <th>{{ $col->label ?: $col->getDisplayLabel() }}</th>
+                                @endforeach
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($nasList as $nas)
+                            <tr>
+                                @foreach($configuredView->columns as $col)
+                                <td>
+                                    <x-nas-table-cell :nas="$nas" :column="$col" :customFieldDefs="$customFieldDefs" />
+                                </td>
+                                @endforeach
+                                <td>
+                                    <a href="{{ route('nas.show', $nas) }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             @else
+                {{-- Vue par défaut --}}
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
@@ -102,9 +122,7 @@
                                         <span class="text-muted">—</span>
                                     @endif
                                 </td>
-                                <td>
-                                    @include('components.status-badge', ['status' => $nas->status])
-                                </td>
+                                <td>@include('components.status-badge', ['status' => $nas->status])</td>
                                 <td class="text-muted small">{{ $nas->snapshots_count }}</td>
                                 <td>
                                     <a href="{{ route('nas.show', $nas) }}" class="btn btn-sm btn-outline-secondary">

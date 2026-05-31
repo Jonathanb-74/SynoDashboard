@@ -214,6 +214,22 @@
                                 </td>
                             </tr>
                             <tr>
+                                <td class="text-muted">Statut</td>
+                                <td>
+                                    @php
+                                        $isOnline = $nas->last_contact_at
+                                            && $nas->last_contact_at->gt(now()->subMinutes($nas->collection_frequency * 2));
+                                    @endphp
+                                    @if(!$nas->last_contact_at)
+                                        <span class="badge bg-secondary">Jamais contacté</span>
+                                    @elseif($isOnline)
+                                        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>OK</span>
+                                    @else
+                                        <span class="badge bg-danger"><i class="bi bi-exclamation-triangle me-1"></i>Erreur</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            <tr>
                                 <td class="text-muted">Dernier contact</td>
                                 <td title="{{ $nas->last_contact_at?->format('d/m/Y H:i:s') }}">
                                     {{ $nas->last_contact_at?->diffForHumans() ?? '—' }}

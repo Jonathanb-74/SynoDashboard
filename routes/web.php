@@ -3,6 +3,8 @@
 use App\Http\Controllers\ApiDebugController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\NasCustomFieldDefinitionController;
+use App\Http\Controllers\NasViewTableController;
+use App\Http\Controllers\DashboardWidgetController;
 use App\Http\Controllers\ApiLogController;
 use App\Http\Controllers\DocsController;
 use App\Http\Controllers\ImportExportController;
@@ -146,6 +148,22 @@ Route::middleware('auth')->group(function () {
         Route::patch('/settings/nas-fields/{def}',               [NasCustomFieldDefinitionController::class, 'update'])->name('settings.nas-fields.update');
         Route::delete('/settings/nas-fields/{def}',              [NasCustomFieldDefinitionController::class, 'destroy'])->name('settings.nas-fields.destroy');
         Route::post('/settings/nas-fields/reorder',              [NasCustomFieldDefinitionController::class, 'reorder'])->name('settings.nas-fields.reorder');
+
+        // NAS view tables
+        Route::get('/settings/nas-views',                                          [NasViewTableController::class, 'index'])->name('settings.nas-views.index');
+        Route::post('/settings/nas-views',                                         [NasViewTableController::class, 'store'])->name('settings.nas-views.store');
+        Route::patch('/settings/nas-views/{view}',                                 [NasViewTableController::class, 'update'])->name('settings.nas-views.update');
+        Route::delete('/settings/nas-views/{view}',                                [NasViewTableController::class, 'destroy'])->name('settings.nas-views.destroy');
+        Route::post('/settings/nas-views/{view}/columns',                          [NasViewTableController::class, 'storeColumn'])->name('settings.nas-views.columns.store');
+        Route::delete('/settings/nas-views/{view}/columns/{col}',                  [NasViewTableController::class, 'destroyColumn'])->name('settings.nas-views.columns.destroy');
+        Route::post('/settings/nas-views/{view}/columns/reorder',                  [NasViewTableController::class, 'reorderColumns'])->name('settings.nas-views.columns.reorder');
+
+        // Dashboard widgets
+        Route::get('/settings/dashboard-widgets',                                  [DashboardWidgetController::class, 'index'])->name('settings.dashboard-widgets.index');
+        Route::post('/settings/dashboard-widgets',                                 [DashboardWidgetController::class, 'store'])->name('settings.dashboard-widgets.store');
+        Route::patch('/settings/dashboard-widgets/{widget}',                       [DashboardWidgetController::class, 'update'])->name('settings.dashboard-widgets.update');
+        Route::delete('/settings/dashboard-widgets/{widget}',                      [DashboardWidgetController::class, 'destroy'])->name('settings.dashboard-widgets.destroy');
+        Route::post('/settings/dashboard-widgets/reorder',                         [DashboardWidgetController::class, 'reorder'])->name('settings.dashboard-widgets.reorder');
 
     });
 

@@ -49,4 +49,15 @@ class NasDevice extends Model
     {
         return $this->hasOne(NasSnapshot::class, 'nas_id')->latestOfMany('collected_at');
     }
+
+    public function customFieldValues(): HasMany
+    {
+        return $this->hasMany(NasCustomFieldValue::class, 'nas_id');
+    }
+
+    public function isOnline(): bool
+    {
+        return $this->last_contact_at !== null
+            && $this->last_contact_at->gt(now()->subMinutes($this->collection_frequency * 2));
+    }
 }
