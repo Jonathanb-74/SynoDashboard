@@ -6,6 +6,7 @@ use App\Models\DisplayBlock;
 use App\Models\DisplayColumn;
 use App\Models\DisplayElement;
 use App\Models\DisplaySubColumn;
+use App\Models\GlobalAttributeMapping;
 use App\Models\JsonDecoderModel;
 use App\Models\NasSnapshot;
 use App\Services\JsonDecoderService;
@@ -49,7 +50,13 @@ class DecoderModelController extends Controller
     {
         $decoderModel->load(['blocks.elements.columns.subColumns']);
 
-        return view('decoder-models.edit', compact('decoderModel'));
+        $globalAttributes = \App\Models\GlobalAttribute::orderBy('position')->get();
+
+        // Map element internal_key → global_attribute_id for this decoder
+        $existingMappings = GlobalAttributeMapping::where('decoder_model_id', $decoderModel->id)
+            ->pluck('global_attribute_id', 'element_internal_key');
+
+        return view('decoder-models.edit', compact('decoderModel', 'globalAttributes', 'existingMappings'));
     }
 
     public function update(Request $request, JsonDecoderModel $decoderModel)
@@ -469,5 +476,30 @@ class DecoderModelController extends Controller
                 }
             }
         }
+    }
+
+    // ─── Global attribute mappings ────────────────────────────────────────
+
+    public function storeGlobalMapping(Request $request, JsonDecoderModel $decoderModel, DisplayElement $element)
+    {
+        $data = $request->validate([
+            'global_attribute_id' => ['required', 'integer', 'exists:global_attributes,id'],
+        ]);
+
+        GlobalAttributeMapping::updateOrCreate(
+            ['global_attribute_id' => $data['global_attribute_id'], 'decoder_model_id' => $decoderModel->id],
+            ['element_internal_key' => $element->internal_key]
+        );
+
+        return back()->with('success', 'Attribut global mappé.');
+    }
+
+    public function destroyGlobalMapping(JsonDecoderModel $decoderModel, DisplayElement $element)
+    {
+        GlobalAttributeMapping::where('decoder_model_id', $decoderModel->id)
+            ->where('element_internal_key', $element->internal_key)
+            ->delete();
+
+        return back()->with('success', 'Mapping supprimé.');
     }
 }

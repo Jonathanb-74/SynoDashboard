@@ -226,6 +226,46 @@
                                     </form>
                                 </div>
 
+                                {{-- Global attribute mapping (simple elements only) --}}
+                                @if($element->type === 'simple' && $globalAttributes->isNotEmpty())
+                                @php $mappedAttrId = $existingMappings[$element->internal_key] ?? null; @endphp
+                                <div class="mt-2 px-2 py-1 d-flex align-items-center gap-2 rounded"
+                                     style="background:#f0f4ff;border:1px dashed #bcd">
+                                    <i class="bi bi-diagram-2 text-primary small"></i>
+                                    <span class="small text-muted">Attribut global :</span>
+                                    @if($mappedAttrId)
+                                        @php $mappedAttr = $globalAttributes->firstWhere('id', $mappedAttrId); @endphp
+                                        <span class="badge bg-primary">{{ $mappedAttr?->name ?? '?' }}</span>
+                                        <form method="POST"
+                                              action="{{ route('decoder-models.global-map.destroy', [$decoderModel, $element]) }}"
+                                              class="d-inline ms-1">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary py-0 px-1"
+                                                    title="Retirer le mapping">
+                                                <i class="bi bi-x small"></i>
+                                            </button>
+                                        </form>
+                                    @else
+                                        <form method="POST"
+                                              action="{{ route('decoder-models.global-map.store', [$decoderModel, $element]) }}"
+                                              class="d-inline d-flex gap-1 align-items-center">
+                                            @csrf
+                                            <select name="global_attribute_id" class="form-select form-select-sm py-0"
+                                                    style="width:auto;font-size:.8rem">
+                                                <option value="">— lier à un attribut —</option>
+                                                @foreach($globalAttributes as $ga)
+                                                    <option value="{{ $ga->id }}">
+                                                        {{ $ga->name }}{{ $ga->unit ? ' ('.$ga->unit.')' : '' }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <button type="submit" class="btn btn-sm btn-outline-primary py-0 px-2"
+                                                    style="font-size:.8rem">Lier</button>
+                                        </form>
+                                    @endif
+                                </div>
+                                @endif
+
                                 {{-- Columns (loop elements only) --}}
                                 @if($element->type === 'loop')
                                 <div x-show="colOpen" x-cloak class="mt-2 ms-3">

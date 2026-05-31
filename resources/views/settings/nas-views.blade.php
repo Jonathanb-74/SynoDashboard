@@ -24,7 +24,8 @@
             this.addColKey    = '';
             this.addColLabel  = '';
             bootstrap.Modal.getOrCreateInstance(document.getElementById('addColModal')).show();
-        }
+        },
+        globalAttributes: {{ \Illuminate\Support\Js::from(\App\Models\GlobalAttribute::orderBy('position')->get(['id','name','unit'])) }}
     }">
 
     {{-- Header --}}
@@ -110,14 +111,21 @@
                             <td class="fw-medium">
                                 @if($col->source === 'device')
                                     {{ $deviceCols[$col->field_key] ?? $col->field_key }}
-                                @else
+                                @elseif($col->source === 'custom_field')
                                     {{ $customFieldDefs->firstWhere('id', (int)$col->field_key)?->label ?? '#'.$col->field_key }}
+                                @else
+                                    @php $ga = \App\Models\GlobalAttribute::find($col->field_key); @endphp
+                                    {{ $ga?->name ?? '#'.$col->field_key }}
                                 @endif
                             </td>
                             <td>
-                                <span class="badge {{ $col->source === 'device' ? 'bg-secondary' : 'bg-info text-dark' }}">
-                                    {{ $col->source === 'device' ? 'NAS' : 'Client' }}
-                                </span>
+                                @php $sourceBadge = match($col->source) {
+                                        'device' => ['bg-secondary', 'NAS'],
+                                        'custom_field' => ['bg-info text-dark', 'Client'],
+                                        'global_attribute' => ['bg-primary', 'Global'],
+                                        default => ['bg-secondary', $col->source],
+                                    }; @endphp
+                                <span class="badge {{ $sourceBadge[0] }}">{{ $sourceBadge[1] }}</span>
                             </td>
                             <td class="text-muted">{{ $col->label ?: '—' }}</td>
                             <td class="text-end pe-2">
@@ -242,6 +250,11 @@
                                         @click="addColSource='custom_field'; addColKey=''">
                                     <i class="bi bi-person-vcard me-1"></i>Informations client
                                 </button>
+                                <button type="button" class="btn btn-sm"
+                                        :class="addColSource==='global_attribute' ? 'btn-primary' : 'btn-outline-secondary'"
+                                        @click="addColSource='global_attribute'; addColKey=''">
+                                    <i class="bi bi-diagram-2 me-1"></i>Attribut global
+                                </button>
                             </div>
                             <input type="hidden" name="source" x-model="addColSource">
                         </div>
@@ -261,6 +274,13 @@
                                         @foreach($customFieldDefs as $def)
                                         <option value="{{ $def->id }}">{{ $def->label }}</option>
                                         @endforeach
+                                    </optgroup>
+                                </template>
+                                <template x-if="addColSource === 'global_attribute'">
+                                    <optgroup label="Attributs globaux">
+                                        <template x-for="ga in globalAttributes" :key="ga.id">
+                                            <option :value="ga.id" x-text="ga.name + (ga.unit ? ' (' + ga.unit + ')' : '')"></option>
+                                        </template>
                                     </optgroup>
                                 </template>
                             </select>

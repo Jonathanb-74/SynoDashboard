@@ -81,7 +81,7 @@
                                 @foreach($nasList as $nas)
                                 <tr>
                                     @foreach($configuredView->columns as $col)
-                                    <td><x-nas-table-cell :nas="$nas" :column="$col" :customFieldDefs="$customFieldDefs" /></td>
+                                    <td><x-nas-table-cell :nas="$nas" :column="$col" :customFieldDefs="$customFieldDefs" :globalAttributeValues="$globalAttributeValues" /></td>
                                     @endforeach
                                     <td><a href="{{ route('nas.show', $nas) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></a></td>
                                 </tr>

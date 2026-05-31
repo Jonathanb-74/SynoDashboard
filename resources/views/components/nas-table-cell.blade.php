@@ -1,4 +1,4 @@
-@props(['nas', 'column', 'customFieldDefs'])
+@props(['nas', 'column', 'customFieldDefs', 'globalAttributeValues' => []])
 
 @if($column->source === 'device')
     @switch($column->field_key)
@@ -44,6 +44,14 @@
         @default
             <span class="text-muted">—</span>
     @endswitch
+
+@elseif($column->source === 'global_attribute')
+    @php $val = $globalAttributeValues[$nas->id][$column->field_key] ?? null; @endphp
+    @if($val !== null && $val !== '')
+        {{ $val }}
+    @else
+        <span class="text-muted">—</span>
+    @endif
 
 @elseif($column->source === 'custom_field')
     @php

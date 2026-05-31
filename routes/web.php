@@ -5,6 +5,7 @@ use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\NasCustomFieldDefinitionController;
 use App\Http\Controllers\NasViewTableController;
 use App\Http\Controllers\DashboardWidgetController;
+use App\Http\Controllers\GlobalAttributeController;
 use App\Http\Controllers\ApiLogController;
 use App\Http\Controllers\DocsController;
 use App\Http\Controllers\ImportExportController;
@@ -151,6 +152,17 @@ Route::middleware('auth')->group(function () {
         Route::post('/settings/nas-fields/reorder',              [NasCustomFieldDefinitionController::class, 'reorder'])->name('settings.nas-fields.reorder');
 
         // NAS view tables
+        // Global attributes
+        Route::get('/settings/global-attributes',                [GlobalAttributeController::class, 'index'])->name('settings.global-attributes.index');
+        Route::post('/settings/global-attributes',               [GlobalAttributeController::class, 'store'])->name('settings.global-attributes.store');
+        Route::patch('/settings/global-attributes/{attr}',       [GlobalAttributeController::class, 'update'])->name('settings.global-attributes.update');
+        Route::delete('/settings/global-attributes/{attr}',      [GlobalAttributeController::class, 'destroy'])->name('settings.global-attributes.destroy');
+        Route::post('/settings/global-attributes/reorder',       [GlobalAttributeController::class, 'reorder'])->name('settings.global-attributes.reorder');
+
+        // Decoder element → global attribute mapping
+        Route::post('/decoder-models/{decoderModel}/elements/{element}/global-map',   [\App\Http\Controllers\DecoderModelController::class, 'storeGlobalMapping'])->name('decoder-models.global-map.store');
+        Route::delete('/decoder-models/{decoderModel}/elements/{element}/global-map', [\App\Http\Controllers\DecoderModelController::class, 'destroyGlobalMapping'])->name('decoder-models.global-map.destroy');
+
         Route::get('/settings/nas-views',                                          [NasViewTableController::class, 'index'])->name('settings.nas-views.index');
         Route::post('/settings/nas-views',                                         [NasViewTableController::class, 'store'])->name('settings.nas-views.store');
         Route::patch('/settings/nas-views/{view}',                                 [NasViewTableController::class, 'update'])->name('settings.nas-views.update');

@@ -63,7 +63,7 @@
                                 <tr>
                                     @foreach($configuredView->columns as $col)
                                     <td>
-                                        <x-nas-table-cell :nas="$nas" :column="$col" :customFieldDefs="$customFieldDefs" />
+                                        <x-nas-table-cell :nas="$nas" :column="$col" :customFieldDefs="$customFieldDefs" :globalAttributeValues="$globalAttributeValues" />
                                     </td>
                                     @endforeach
                                     <td class="text-end">

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ApiModel;
+use App\Models\GlobalAttributeMapping;
 use App\Models\JsonDecoderModel;
 use App\Models\NasCustomFieldDefinition;
 use App\Models\NasCustomFieldValue;
@@ -10,6 +11,7 @@ use App\Models\NasDevice;
 use App\Models\NasViewTable;
 use App\Services\JsonDecoderService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class NasController extends Controller
 {
@@ -29,17 +31,23 @@ class NasController extends Controller
             ->withCount('snapshots')
             ->orderByDesc('last_contact_at');
 
-        $needsCustomFields = $configuredView
-            && $configuredView->columns->where('source', 'custom_field')->isNotEmpty();
+        $needsCustomFields    = $configuredView && $configuredView->columns->where('source', 'custom_field')->isNotEmpty();
+        $needsGlobalAttributes = $configuredView && $configuredView->columns->where('source', 'global_attribute')->isNotEmpty();
 
         if ($needsCustomFields) {
             $query->with('customFieldValues');
         }
+        if ($needsGlobalAttributes) {
+            $query->with('latestSnapshot');
+        }
 
-        $nasList         = $query->get();
-        $customFieldDefs = NasCustomFieldDefinition::orderBy('position')->get();
+        $nasList              = $query->get();
+        $customFieldDefs      = NasCustomFieldDefinition::orderBy('position')->get();
+        $globalAttributeValues = $needsGlobalAttributes
+            ? $this->resolveGlobalAttributeValues($nasList, $configuredView->columns)
+            : [];
 
-        return view('nas.index', compact('nasList', 'configuredView', 'allViews', 'customFieldDefs'));
+        return view('nas.index', compact('nasList', 'configuredView', 'allViews', 'customFieldDefs', 'globalAttributeValues'));
     }
 
     public function show(Request $request, NasDevice $nas)
@@ -172,5 +180,43 @@ class NasController extends Controller
 
         return redirect()->route('nas.index')
             ->with('success', "Le NAS « {$nas->name} » a été supprimé.");
+    }
+
+    private function resolveGlobalAttributeValues(Collection $nasList, Collection $columns): array
+    {
+        $decoderIds = $nasList->pluck('decoder_model_id')->filter()->unique();
+        if ($decoderIds->isEmpty()) return [];
+
+        $mappings = GlobalAttributeMapping::whereIn('decoder_model_id', $decoderIds)
+            ->get()
+            ->groupBy('decoder_model_id');
+
+        $result = [];
+        foreach ($nasList as $nas) {
+            if (!$nas->decoder_model_id || !$nas->latestSnapshot?->decoded_cache) continue;
+
+            $decodedData     = $nas->latestSnapshot->getDecodedCache();
+            $decoderMappings = $mappings[$nas->decoder_model_id] ?? collect();
+
+            foreach ($decoderMappings as $mapping) {
+                $value = $this->findByInternalKey($decodedData, $mapping->element_internal_key);
+                $result[$nas->id][$mapping->global_attribute_id] = $value;
+            }
+        }
+
+        return $result;
+    }
+
+    private function findByInternalKey(array $decodedData, string $key): mixed
+    {
+        foreach ($decodedData as $block) {
+            foreach ($block['elements'] ?? [] as $el) {
+                if ($el['type'] === 'simple' && ($el['internal_key'] ?? '') === $key) {
+                    $val = $el['value'];
+                    return is_array($val) ? ($val['label'] ?? $val['raw'] ?? null) : $val;
+                }
+            }
+        }
+        return null;
     }
 }

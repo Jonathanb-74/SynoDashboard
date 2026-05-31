@@ -149,6 +149,10 @@
            class="nav-link {{ request()->routeIs('settings.dashboard-widgets.*') ? 'active' : '' }}">
             <i class="bi bi-grid-1x2 me-2"></i>Widgets Dashboard
         </a>
+        <a href="{{ route('settings.global-attributes.index') }}"
+           class="nav-link {{ request()->routeIs('settings.global-attributes.*') ? 'active' : '' }}">
+            <i class="bi bi-diagram-2 me-2"></i>Attributs globaux
+        </a>
         @endif
         @endauth
 

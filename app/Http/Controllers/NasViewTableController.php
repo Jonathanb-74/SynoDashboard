@@ -57,7 +57,7 @@ class NasViewTableController extends Controller
     public function storeColumn(Request $request, NasViewTable $view): RedirectResponse
     {
         $data = $request->validate([
-            'source'    => ['required', 'in:device,custom_field'],
+            'source'    => ['required', 'in:device,custom_field,global_attribute'],
             'field_key' => ['required', 'string', 'max:64'],
             'label'     => ['nullable', 'string', 'max:255'],
         ]);
